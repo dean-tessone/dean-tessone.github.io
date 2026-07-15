@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Dean Tessone — computational biologist building multimodal foundation models across pathology, single-cell imaging, genomics, and transcriptomics." />
+    <title>Dean Tessone — Across Biological Scales</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="image" href="assets/pathology-zoom-v1.jpg" fetchpriority="high" />
+    <link rel="preload" as="image" href="assets/tissue-imc-v2.jpg" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Instrument+Serif:ital@0;1&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="scroll-progress" aria-hidden="true"><span id="page-progress"></span></div>
+
+    <header class="site-header">
+      <a class="wordmark" href="#top" aria-label="Dean Tessone home">DT<span>.</span></a>
+      <nav aria-label="Main navigation">
+        <a href="#scales">Research</a>
+        <a href="#about">About</a>
+        <a href="#papers">Papers</a>
+        <a href="#notes">Notes</a>
+      </nav>
+      <a class="header-link" href="assets/DeanTessone_Resume.pdf" target="_blank" rel="noreferrer">CV <span>↗</span></a>
+    </header>
+
+    <main id="top">
+      <section class="intro" aria-labelledby="intro-title">
+        <div class="intro-visual" aria-hidden="true">
+          <img src="assets/pathology-zoom-v1.jpg" alt="" />
+          <div class="intro-lens"></div>
+        </div>
+        <div class="intro-copy">
+          <p class="eyebrow"><span></span> Multimodal &amp; Computational Biology</p>
+          <h1 id="intro-title">Decoding biology<br /><em>across scales.</em></h1>
+          <p class="intro-deck">I’m Dean Tessone. I build models and tools that find signal across cancer biology—from a whole pathology slide, to one rare cell, to the molecular measurements inside a patient.</p>
+          <a class="primary-link" href="#scales">Enter the specimen <span>↓</span></a>
+        </div>
+        <div class="intro-meta">
+          <span>Foundation Models · Tempus AI</span>
+          <span>Ph.D. · USC</span>
+        </div>
+        <div class="scroll-cue" aria-hidden="true"><i></i><span>Scroll to magnify</span></div>
+      </section>
+
+      <section class="scale-story" id="scales" aria-label="Research across biological scales">
+        <div class="microscope-stage" id="microscope-stage">
+          <div class="stage-media" role="img" aria-label="A microscopy sequence moving from whole H and E tissue through imaging mass cytometry and single-cell imaging to the interior of one cell.">
+            <div class="specimen-layer tissue-he" data-layer="tissue-he"><img src="assets/pathology-zoom-v1.jpg" alt="" /></div>
+            <div class="specimen-layer tissue-imc" data-layer="tissue-imc"><img src="assets/tissue-imc-v2.jpg" alt="" /></div>
+            <div class="specimen-layer cell-field-he" data-layer="cell-field-he"><img src="assets/cell-field-he-v2.jpg" alt="" /></div>
+            <div class="specimen-layer cell-field-if" data-layer="cell-field-if"><img src="assets/cell-field-if-v2.jpg" alt="" /></div>
+            <div class="specimen-layer single-cell" data-layer="single-cell"><img src="assets/single-cell-if-v2.jpg" alt="" /></div>
+            <div class="specimen-layer cell-nucleus" data-layer="cell-nucleus"><img src="assets/cell-nucleus-v2.jpg" alt="" /></div>
+            <div class="stage-vignette"></div>
+          </div>
+
+          <div class="zoom-aperture tissue-aperture" id="tissue-aperture" aria-hidden="true"><span>500 μm · CELLULAR NEIGHBORHOOD</span></div>
+          <div class="zoom-aperture cell-aperture" id="cell-aperture" aria-hidden="true"><span>10 μm · SINGLE CELL</span></div>
+
+          <div class="stage-hud">
+            <div class="hud-top">
+              <span id="modality-label">H&amp;E WHOLE SLIDE</span>
+              <span>SPECIMEN 01 · MULTISCALE MODEL</span>
+            </div>
+            <div class="modality-switch" id="modality-switch" role="group" aria-label="Microscopy modality">
+              <button type="button" data-mode="he" class="active" aria-pressed="true">H&amp;E</button>
+              <i aria-hidden="true"></i>
+              <button type="button" data-mode="imc" aria-pressed="false">IMC</button>
+            </div>
+            <div class="focus-reticle" id="focus-reticle"><i></i><i></i><i></i><i></i><b>RARE EVENT</b></div>
+            <div class="scale-readout">
+              <small id="scale-context">FIELD OF VIEW</small>
+              <strong id="scale-value">10 mm</strong>
+              <span id="scale-name">WHOLE TISSUE</span>
+            </div>
+            <div class="depth-rail">
+              <span class="rail-label">SCALE</span>
+              <i data-step="0" class="active"></i>
+              <i data-step="1"></i>
+              <i data-step="2"></i>
+              <i data-step="3"></i>
+              <b id="rail-progress"></b>
+            </div>
+          </div>
+
+          <div class="fusion-model" id="fusion-model" aria-hidden="true">
+            <div class="fusion-ring ring-one"></div>
+            <div class="fusion-ring ring-two"></div>
+            <span class="fusion-node node-dna">DNA</span>
+            <span class="fusion-node node-rna">RNA</span>
+            <span class="fusion-node node-ctdna">ctDNA</span>
+            <span class="fusion-node node-wsi">PATHOLOGY</span>
+            <div class="fusion-core"><small>PATIENT-LEVEL</small><strong>TUMOR<br />BIOLOGY</strong></div>
+          </div>
+
+          <div class="chapters">
+            <article class="scale-chapter active" data-step="0">
+              <div class="chapter-inner chapter-left">
+                <p class="chapter-index">01 / 04 · WHOLE TISSUE</p>
+                <h2>One tissue.<br /><em>Two views.</em></h2>
+                <p class="chapter-summary">The same section can reveal morphology in H&amp;E and dozens of spatially resolved protein signals in imaging mass cytometry.</p>
+                <a class="work-card" href="https://doi.org/10.1186/s12859-026-06547-4" target="_blank" rel="noreferrer">
+                  <span class="work-type">BMC BIOINFORMATICS · 2026</span>
+                  <strong>OpenIMC</strong>
+                  <p>An open-source platform for reproducible, end-to-end analysis of single-cell and spatial proteomics by IMC.</p>
+                  <i>Read the published paper ↗</i>
+                </a>
+              </div>
+            </article>
+
+            <article class="scale-chapter" data-step="1">
+              <div class="chapter-inner chapter-right">
+                <p class="chapter-index">02 / 04 · ONE CELL</p>
+                <h2>A cell becomes<br /><em>a representation.</em></h2>
+                <p class="chapter-summary">At the scale of one isolated cell, representation learning captures morphology without relying on a predefined marker panel—and remains robust across scanners.</p>
+                <a class="work-card" href="https://www.nature.com/articles/s41598-025-20514-8" target="_blank" rel="noreferrer">
+                  <span class="work-type">SCIENTIFIC REPORTS · 2025</span>
+                  <strong>Robust single-cell phenotyping</strong>
+                  <p>Representation learning across millions of individual cells in whole-slide liquid-biopsy imaging.</p>
+                  <i>Read the paper ↗</i>
+                </a>
+              </div>
+            </article>
+
+            <article class="scale-chapter" data-step="2">
+              <div class="chapter-inner chapter-left">
+                <p class="chapter-index">03 / 04 · ONE RARE CELL</p>
+                <h2>Find the signal<br /><em>among millions.</em></h2>
+                <p class="chapter-summary">The same single-cell representations make rare-event detection scalable: surface the biologically meaningful cell without assuming in advance what it should look like.</p>
+                <a class="work-card" href="https://www.nature.com/articles/s41698-025-01015-3" target="_blank" rel="noreferrer">
+                  <span class="work-type">NPJ PRECISION ONCOLOGY · 2025</span>
+                  <strong>Rare events in liquid biopsy</strong>
+                  <p>Unsupervised detection of circulating tumor and tumor-associated cells.</p>
+                  <i>Read the paper ↗</i>
+                </a>
+              </div>
+            </article>
+
+            <article class="scale-chapter" data-step="3">
+              <div class="chapter-inner chapter-right molecular-copy">
+                <p class="chapter-index">04 / 04 · ONE PATIENT</p>
+                <h2>Every modality.<br /><em>One model.</em></h2>
+                <p class="chapter-summary">At Tempus AI, I work full time on a multimodal foundation model that integrates a patient’s DNA, RNA, ctDNA, and pathology slide to reason about tumor biology. It is the project that brings every preceding scale together.</p>
+                <div class="work-card static-card flagship-card">
+                  <span class="work-type">FULL-TIME WORK · TEMPUS AI</span>
+                  <strong>Multimodal foundation model</strong>
+                  <p>Learning a unified patient representation across molecular measurements and tissue morphology.</p>
+                  <i>DNA + RNA + ctDNA + PATHOLOGY</i>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="statement">
+        <p class="eyebrow">The throughline</p>
+        <blockquote>From tissue, to cell, to molecule—<br /><em>then back to the whole patient.</em></blockquote>
+      </section>
+
+      <section class="about section-shell" id="about" aria-labelledby="about-title">
+        <div class="section-label"><span>02</span><p>Trajectory</p></div>
+        <div class="about-copy">
+          <h2 id="about-title">Cells, code,<br /><em>and patient context.</em></h2>
+          <p>My Ph.D. work at USC centers on unsupervised representation learning, rare-event detection, and high-dimensional single-cell imaging. At Tempus AI, my full-time work extends that trajectory into multimodal foundation models spanning pathology, DNA, RNA, and ctDNA.</p>
+          <a class="text-link" href="assets/DeanTessone_Resume.pdf" target="_blank" rel="noreferrer">Download curriculum vitae ↗</a>
+        </div>
+        <ol class="timeline">
+          <li><time>NOW</time><div><span>Tempus AI · Full-time</span><strong>Multimodal Foundation Models</strong></div></li>
+          <li><time>2023—</time><div><span>University of Southern California</span><strong>Ph.D. · Molecular &amp; Computational Biology</strong></div></li>
+          <li><time>2021</time><div><span>Genentech · South San Francisco</span><strong>Oncology Research Development Intern</strong></div></li>
+          <li><time>2019—23</time><div><span>University of Southern California</span><strong>B.S. · Biological Sciences</strong></div></li>
+        </ol>
+      </section>
+
+      <section class="papers section-shell" id="papers" aria-labelledby="papers-title">
+        <div class="section-label"><span>03</span><p>Selected papers</p></div>
+        <div class="papers-heading">
+          <h2 id="papers-title">Published<br /><em>signals.</em></h2>
+          <a class="text-link" href="https://scholar.google.com/citations?user=ld6GwJsAAAAJ&amp;hl=en&amp;authuser=1" target="_blank" rel="noreferrer">All work on Google Scholar ↗</a>
+        </div>
+        <div class="paper-list">
+          <a href="https://doi.org/10.1186/s12859-026-06547-4" target="_blank" rel="noreferrer"><span>2026 · BMC Bioinformatics</span><strong>OpenIMC: an open-source platform for analyzing single-cell and spatial proteomics by imaging mass cytometry.</strong><i>↗</i></a>
+          <a href="https://www.nature.com/articles/s41598-025-20514-8" target="_blank" rel="noreferrer"><span>2025 · Scientific Reports</span><strong>Representation learning enables robust single-cell phenotyping in whole-slide liquid-biopsy imaging.</strong><i>↗</i></a>
+          <a href="https://www.nature.com/articles/s41698-025-01015-3" target="_blank" rel="noreferrer"><span>2025 · npj Precision Oncology</span><strong>Unsupervised detection of rare events in liquid-biopsy assays.</strong><i>↗</i></a>
+        </div>
+      </section>
+
+      <section class="notes" id="notes" aria-labelledby="notes-title">
+        <div class="section-shell notes-inner">
+          <div class="section-label"><span>04</span><p>Field notes</p></div>
+          <h2 id="notes-title">Ideas in<br /><em>progress.</em></h2>
+          <div class="notes-placeholder"><span>✳</span><p>Research reflections, side projects, and things I’m learning will live here.</p><small>LAB NOTEBOOK · COMING SOON</small></div>
+        </div>
+      </section>
+
+      <section class="contact section-shell" aria-labelledby="contact-title">
+        <p class="eyebrow">Collaborate</p>
+        <h2 id="contact-title">Have a hard biological<br />question? <em>Let’s talk.</em></h2>
+        <a class="contact-email" href="mailto:tessone@usc.edu">tessone@usc.edu <span>↗</span></a>
+      </section>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="#top">DT<span>.</span></a>
+      <div class="footer-links"><a href="https://www.linkedin.com/in/deantessone/" target="_blank" rel="noreferrer">LinkedIn</a><a href="https://github.com/dean-tessone" target="_blank" rel="noreferrer">GitHub</a><a href="https://scholar.google.com/citations?user=ld6GwJsAAAAJ&amp;hl=en&amp;authuser=1" target="_blank" rel="noreferrer">Scholar</a></div>
+      <p>© <span id="year"></span> Dean Tessone</p>
+    </footer>
+    <script src="script.js"></script>
+  </body>
+</html>
