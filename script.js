@@ -20,48 +20,71 @@ const scaleContext = document.querySelector('#scale-context');
 const railProgress = document.querySelector('#rail-progress');
 const pageProgress = document.querySelector('#page-progress');
 const header = document.querySelector('.site-header');
-const tissueAperture = document.querySelector('#tissue-aperture');
-const cellAperture = document.querySelector('#cell-aperture');
+const cellTrail = document.querySelector('#cell-trail');
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const states = [
-  { modality: 'H&E WHOLE SLIDE', value: '10 mm', name: 'WHOLE TISSUE', context: 'FIELD OF VIEW' },
-  { modality: 'IF · SINGLE-CELL IMAGE', value: '10 μm', name: 'ONE CELL', context: 'FIELD OF VIEW' },
-  { modality: 'REPRESENTATION · SEARCH', value: '10 μm', name: 'RARE EVENT', context: 'CELL SCALE' },
-  { modality: 'MULTIMODAL FOUNDATION MODEL', value: '1 patient', name: 'DNA · RNA · ctDNA · WSI', context: 'MODEL CONTEXT' }
+  { modality: 'DNA · RNA ENCODERS', value: 'DNA + RNA', name: 'MOLECULAR SIGNAL', context: 'INPUT SPACE' },
+  { modality: 'IF · SINGLE-CELL IMAGE', value: '10 μm', name: 'ONE CELL', context: 'PHENOTYPE' },
+  { modality: 'LIQUID BIOPSY · SEARCH', value: '1 in millions', name: 'RARE EVENT', context: 'SEARCH SPACE' },
+  { modality: 'H&E · WHOLE TISSUE', value: '10 mm', name: 'TISSUE CONTEXT', context: 'FIELD OF VIEW' },
+  { modality: 'MULTIMODAL FOUNDATION MODEL', value: '1 patient', name: 'UNIFIED REPRESENTATION', context: 'MODEL CONTEXT' }
 ];
 
-const AUTO_SWITCH_MS = 2300;
-const OVERVIEW_HOLD_RAW_PROGRESS = 0.055;
+const STEP_BREAKS = [0.18, 0.37, 0.58, 0.79];
+const AUTO_SWITCH_MS = 1550;
+const STORY_HOLD = 0.022;
 let targetProgress = 0;
 let visualProgress = 0;
-let rawProgress = 0;
 let activeStep = -1;
 let storyVisible = false;
 let manualMode = null;
 let imcBlend = 0;
 let previousFrameTime = 0;
+let tissueEnteredAt = 0;
+
+function buildMolecules() {
+  const helix = document.querySelector('#dna-helix');
+  const rna = document.querySelector('#rna-strand');
+
+  for (let index = 0; index < 18; index += 1) {
+    const rung = document.createElement('i');
+    rung.className = 'dna-rung';
+    rung.style.setProperty('--y', `${4 + index * 5.2}%`);
+    rung.style.setProperty('--delay', `${index * -0.19}s`);
+    helix.appendChild(rung);
+  }
+
+  for (let index = 0; index < 15; index += 1) {
+    const bead = document.createElement('i');
+    bead.className = 'rna-bead';
+    bead.style.setProperty('--x', `${48 + Math.sin(index * 0.92) * 34}%`);
+    bead.style.setProperty('--y', `${4 + index * 6.5}%`);
+    bead.style.setProperty('--delay', `${index * -0.13}s`);
+    rna.appendChild(bead);
+  }
+}
 
 function stepFromProgress(progress) {
-  if (progress < 0.315) return 0;
-  if (progress < 0.54) return 1;
-  if (progress < 0.76) return 2;
-  return 3;
+  if (progress < STEP_BREAKS[0]) return 0;
+  if (progress < STEP_BREAKS[1]) return 1;
+  if (progress < STEP_BREAKS[2]) return 2;
+  if (progress < STEP_BREAKS[3]) return 3;
+  return 4;
 }
 
 function mapScrollProgress(progress) {
-  if (progress <= OVERVIEW_HOLD_RAW_PROGRESS) return 0;
-  const released = (progress - OVERVIEW_HOLD_RAW_PROGRESS) / (1 - OVERVIEW_HOLD_RAW_PROGRESS);
-  return Math.pow(clamp(released), 1.08);
+  if (progress <= STORY_HOLD) return 0;
+  const released = (progress - STORY_HOLD) / (1 - STORY_HOLD);
+  return Math.pow(clamp(released), 1.035);
 }
 
 function measureProgress() {
   const rect = story.getBoundingClientRect();
   const distance = Math.max(1, rect.height - window.innerHeight);
-  rawProgress = clamp(-rect.top / distance);
+  const rawProgress = clamp(-rect.top / distance);
   targetProgress = mapScrollProgress(rawProgress);
   storyVisible = rect.bottom > 0 && rect.top < window.innerHeight;
-  stage.classList.toggle('modality-locked', rawProgress > OVERVIEW_HOLD_RAW_PROGRESS);
 
   const pageMax = document.documentElement.scrollHeight - window.innerHeight;
   pageProgress.style.transform = `scaleX(${pageMax > 0 ? window.scrollY / pageMax : 0})`;
@@ -69,16 +92,21 @@ function measureProgress() {
   header.classList.toggle('on-dark', stageRect.top <= 76 && stageRect.bottom >= 76);
 }
 
-function applyStep(step) {
+function applyStep(step, time) {
   if (step === activeStep) return;
   activeStep = step;
   chapters.forEach((chapter, index) => chapter.classList.toggle('active', index === activeStep));
   railDots.forEach((dot, index) => dot.classList.toggle('active', index <= activeStep));
-  stage.classList.remove('step-0', 'step-1', 'step-2', 'step-3');
+  stage.classList.remove('step-0', 'step-1', 'step-2', 'step-3', 'step-4');
   stage.classList.add(`step-${activeStep}`);
 
+  if (activeStep === 3) {
+    tissueEnteredAt = time || performance.now();
+    manualMode = null;
+  }
+
   const state = states[activeStep];
-  if (activeStep !== 0) modalityLabel.textContent = state.modality;
+  modalityLabel.textContent = state.modality;
   scaleValue.textContent = state.value;
   scaleName.textContent = state.name;
   scaleContext.textContent = state.context;
@@ -94,27 +122,20 @@ function setTransform(layer, value) {
 }
 
 function setClip(layer, radius, x, y) {
-  const next = `circle(${Math.max(0, radius).toFixed(2)}% at ${x}% ${y}%)`;
+  const next = `circle(${Math.max(0, radius).toFixed(2)}% at ${x.toFixed(2)}% ${y.toFixed(2)}%)`;
   if (layer.style.clipPath !== next) layer.style.clipPath = next;
 }
 
-function setAperture(element, size, opacity, x, y) {
-  const nextSize = `${Math.max(0, size).toFixed(1)}px`;
-  element.style.width = nextSize;
-  element.style.height = nextSize;
-  element.style.left = `${x}%`;
-  element.style.top = `${y}%`;
-  element.style.opacity = clamp(opacity).toFixed(3);
-}
-
 function desiredImcState(time) {
-  if (!storyVisible || rawProgress > OVERVIEW_HOLD_RAW_PROGRESS) return false;
+  if (!storyVisible || activeStep !== 3) return false;
   if (manualMode) return manualMode === 'imc';
-  return Math.floor(time / AUTO_SWITCH_MS) % 2 === 1;
+  const elapsed = time - tissueEnteredAt;
+  if (elapsed < 1100) return false;
+  return Math.floor((elapsed - 1100) / AUTO_SWITCH_MS) % 2 === 0;
 }
 
 function updateModalityControl(showingImc) {
-  modalityLabel.textContent = showingImc ? 'IMAGING MASS CYTOMETRY' : 'H&E WHOLE SLIDE';
+  if (activeStep === 3) modalityLabel.textContent = showingImc ? 'IMAGING MASS CYTOMETRY' : 'H&E · WHOLE TISSUE';
   modalityOptions.forEach((option) => {
     const active = option.dataset.mode === (showingImc ? 'imc' : 'he');
     option.classList.toggle('active', active);
@@ -122,86 +143,85 @@ function updateModalityControl(showingImc) {
   });
 }
 
-function updateTransitionalReadout(progress) {
-  if (progress < 0.075) {
-    updateModalityControl(imcBlend >= 0.5);
-    scaleContext.textContent = 'FIELD OF VIEW';
-    scaleValue.textContent = '10 mm';
-    scaleName.textContent = 'WHOLE TISSUE';
-  } else if (progress < 0.225) {
-    modalityLabel.textContent = 'H&E · CELLULAR NEIGHBORHOOD';
-    scaleContext.textContent = 'FIELD OF VIEW';
-    scaleValue.textContent = '500 μm';
-    scaleName.textContent = 'CELLULAR NEIGHBORHOOD';
+function positionCell(progress) {
+  const mobile = window.innerWidth <= 900;
+  let x;
+  let y;
+  let scale;
+  let rotation;
+
+  if (progress < 0.37) {
+    const emerge = smoothstep(0.11, 0.31, progress);
+    x = lerp(mobile ? 50 : 67, mobile ? 50 : 34, emerge);
+    y = lerp(mobile ? 75 : 50, mobile ? 75 : 53, emerge);
+    scale = lerp(0.2, mobile ? 0.7 : 0.82, emerge);
+    rotation = lerp(8, -2, emerge);
   } else {
-    modalityLabel.textContent = 'IF · TARGET CELL';
-    scaleContext.textContent = 'FIELD OF VIEW';
-    scaleValue.textContent = '50 μm';
-    scaleName.textContent = 'CELLULAR TARGET';
+    const travel = smoothstep(0.37, 0.67, progress);
+    x = lerp(mobile ? 50 : 38, mobile ? 78 : 88, travel);
+    y = (mobile ? 75 : 53) + Math.sin(travel * Math.PI * 2.2) * (mobile ? 2.2 : 4.2);
+    scale = lerp(mobile ? 0.34 : 0.42, 0.13, travel);
+    rotation = lerp(-4, 16, travel);
   }
+
+  layers.cell.style.left = `${x.toFixed(2)}%`;
+  layers.cell.style.top = `${y.toFixed(2)}%`;
+  setTransform(layers.cell, `translate(-50%, -50%) scale(${scale.toFixed(3)}) rotate(${rotation.toFixed(2)}deg)`);
+
+  const trailX = x - 53;
+  const trailY = y - 54;
+  setTransform(cellTrail, `translate(${trailX.toFixed(2)}vw, ${trailY.toFixed(2)}vh)`);
 }
 
 function renderFrame(time) {
   const frameDelta = Math.min(48, previousFrameTime ? time - previousFrameTime : 16.7);
   previousFrameTime = time;
-  const progressEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.011);
+  const progressEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.0095);
   visualProgress += (targetProgress - visualProgress) * progressEase;
   if (Math.abs(targetProgress - visualProgress) < 0.0001) visualProgress = targetProgress;
 
   const progress = visualProgress;
-  applyStep(stepFromProgress(progress));
+  applyStep(stepFromProgress(progress), time);
   railProgress.style.transform = `scaleY(${progress})`;
 
   const requestedImc = desiredImcState(time);
-  const blendEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.03);
+  const blendEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.035);
   imcBlend += ((requestedImc ? 1 : 0) - imcBlend) * blendEase;
   if (Math.abs(imcBlend - (requestedImc ? 1 : 0)) < 0.002) imcBlend = requestedImc ? 1 : 0;
+  updateModalityControl(imcBlend >= 0.5);
 
-  const tissueZoom = smoothstep(0.07, 0.18, progress);
-  const tissueAlpha = 1 - smoothstep(0.18, 0.225, progress);
-  const fieldReveal = smoothstep(0.08, 0.185, progress);
-  const fieldLife = 1 - smoothstep(0.29, 0.33, progress);
-  const fieldIfMix = smoothstep(0.19, 0.238, progress);
-  const cellZoom = smoothstep(0.225, 0.315, progress);
-  const singleReveal = smoothstep(0.232, 0.315, progress);
-  const singleLife = 1 - smoothstep(0.69, 0.785, progress);
-  const singleAlpha = smoothstep(0.222, 0.238, progress) * singleLife;
-  const nucleusAlpha = smoothstep(0.69, 0.79, progress);
+  const moleculeAlpha = 1 - smoothstep(0.2, 0.37, progress);
+  const cellAlpha = smoothstep(0.1, 0.19, progress) * (1 - smoothstep(0.65, 0.72, progress));
+  const bloodstreamAlpha = smoothstep(0.32, 0.4, progress) * (1 - smoothstep(0.63, 0.72, progress));
+  const tissueReveal = smoothstep(0.58, 0.69, progress);
+  const patientReveal = smoothstep(0.79, 0.89, progress);
+  const tissueLife = 1 - smoothstep(0.88, 0.95, progress);
+  const tissueAlpha = tissueReveal * tissueLife;
 
+  setOpacity(layers.molecules, moleculeAlpha);
+  setOpacity(layers.bloodstream, bloodstreamAlpha);
+  setOpacity(layers.cell, cellAlpha);
   setOpacity(layers['tissue-he'], tissueAlpha * (1 - imcBlend));
   setOpacity(layers['tissue-imc'], tissueAlpha * imcBlend);
-  setOpacity(layers['cell-field-he'], fieldLife * (1 - fieldIfMix));
-  setOpacity(layers['cell-field-if'], fieldLife * fieldIfMix);
-  setOpacity(layers['single-cell'], singleAlpha);
-  setOpacity(layers['cell-nucleus'], nucleusAlpha);
+  setOpacity(layers.patient, patientReveal);
 
-  setTransform(layers['tissue-he'], `scale(${lerp(1, 1.22, tissueZoom).toFixed(3)})`);
-  setTransform(layers['tissue-imc'], 'scale(1)');
+  setTransform(layers.molecules, `scale(${lerp(1, 1.16, smoothstep(0, 0.34, progress)).toFixed(3)})`);
+  setTransform(layers.bloodstream, `scale(${lerp(1.04, 1, smoothstep(0.34, 0.64, progress)).toFixed(3)}) translateX(${lerp(1.8, -1.8, smoothstep(0.34, 0.64, progress)).toFixed(2)}%)`);
+  positionCell(progress);
+  setOpacity(cellTrail, smoothstep(0.37, 0.43, progress) * (1 - smoothstep(0.61, 0.68, progress)));
 
-  const fieldRadius = lerp(0, 115, fieldReveal);
-  setClip(layers['cell-field-he'], fieldRadius, 63, 50);
-  setClip(layers['cell-field-if'], fieldRadius, 63, 50);
-  const fieldScale = lerp(1.04, 1.72, cellZoom);
-  setTransform(layers['cell-field-he'], `scale(${fieldScale.toFixed(3)})`);
-  setTransform(layers['cell-field-if'], `scale(${fieldScale.toFixed(3)})`);
+  const tissueX = window.innerWidth <= 900 ? 78 : 88;
+  const tissueY = window.innerWidth <= 900 ? 74 : 53;
+  const tissueRadius = lerp(0, 145, tissueReveal);
+  setClip(layers['tissue-he'], tissueRadius, tissueX, tissueY);
+  setClip(layers['tissue-imc'], tissueRadius, tissueX, tissueY);
+  const tissueScale = lerp(1, 0.16, patientReveal);
+  const tissueTransform = `scale(${tissueScale.toFixed(3)})`;
+  layers['tissue-he'].style.transformOrigin = '31% 51%';
+  layers['tissue-imc'].style.transformOrigin = '31% 51%';
+  setTransform(layers['tissue-he'], tissueTransform);
+  setTransform(layers['tissue-imc'], tissueTransform);
 
-  const singleRadius = lerp(0, 115, singleReveal);
-  setClip(layers['single-cell'], singleRadius, 50, 50);
-  const earlyShift = lerp(0, -9, smoothstep(0.305, 0.345, progress));
-  const cellShift = progress < 0.46 ? earlyShift : lerp(-9, 9, smoothstep(0.46, 0.58, progress));
-  const entryScale = lerp(1.2, 0.98, singleReveal);
-  const settledScale = lerp(0.98, 1.08, smoothstep(0.35, 0.68, progress));
-  const cellScale = progress < 0.32 ? entryScale : settledScale;
-  setTransform(layers['single-cell'], `translateX(${cellShift.toFixed(2)}%) scale(${cellScale.toFixed(3)})`);
-  setTransform(layers['cell-nucleus'], `translateX(-10%) scale(${lerp(1, 1.045, smoothstep(0.79, 1, progress)).toFixed(3)})`);
-
-  const minViewport = Math.min(window.innerWidth, window.innerHeight);
-  const tissueRingOpacity = smoothstep(0.065, 0.09, progress) * (1 - smoothstep(0.17, 0.205, progress));
-  const cellRingOpacity = smoothstep(0.215, 0.238, progress) * (1 - smoothstep(0.3, 0.33, progress));
-  setAperture(tissueAperture, lerp(52, minViewport * 1.48, fieldReveal), tissueRingOpacity, 63, 50);
-  setAperture(cellAperture, lerp(46, minViewport * 1.42, singleReveal), cellRingOpacity, 50, 50);
-
-  if (activeStep === 0) updateTransitionalReadout(progress);
   requestAnimationFrame(renderFrame);
 }
 
@@ -212,9 +232,10 @@ modalityOptions.forEach((option) => {
   });
 });
 
+buildMolecules();
 window.addEventListener('scroll', measureProgress, { passive: true });
 window.addEventListener('resize', measureProgress);
 measureProgress();
-applyStep(0);
+applyStep(0, performance.now());
 requestAnimationFrame(renderFrame);
 document.querySelector('#year').textContent = new Date().getFullYear();
