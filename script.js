@@ -110,8 +110,8 @@ function drawMolecularAssembly(progress, time) {
   const nodeAlpha = (0.48 + assembly * 0.35) * scaffoldAlpha;
 
   const halo = molecularContext.createRadialGradient(centerX, centerY, 0, centerX, centerY, cellRadius * 1.3);
-  halo.addColorStop(0, `rgba(119, 91, 206, ${0.14 * assembly})`);
-  halo.addColorStop(0.45, `rgba(211, 72, 112, ${0.055 * membrane})`);
+  halo.addColorStop(0, `rgba(47, 124, 255, ${0.16 * assembly})`);
+  halo.addColorStop(0.45, `rgba(105, 199, 255, ${0.065 * membrane})`);
   halo.addColorStop(1, 'rgba(3, 8, 18, 0)');
   molecularContext.fillStyle = halo;
   molecularContext.beginPath();
@@ -139,17 +139,17 @@ function drawMolecularAssembly(progress, time) {
     dnaA.push([ax, ay]);
     dnaB.push([bx, by]);
 
-    molecularContext.strokeStyle = `rgba(216, 250, 113, ${0.34 * strandAlpha})`;
+    molecularContext.strokeStyle = `rgba(226, 237, 255, ${0.38 * strandAlpha})`;
     molecularContext.lineWidth = 1;
     molecularContext.beginPath();
     molecularContext.moveTo(ax, ay);
     molecularContext.lineTo(bx, by);
     molecularContext.stroke();
-    drawNode(ax, ay, 2.3 + (index % 3) * 0.45, '#65d6dc', nodeAlpha);
-    drawNode(bx, by, 2.3 + ((index + 1) % 3) * 0.45, '#f0658f', nodeAlpha);
+    drawNode(ax, ay, 2.3 + (index % 3) * 0.45, '#69c7ff', nodeAlpha);
+    drawNode(bx, by, 2.3 + ((index + 1) % 3) * 0.45, '#2f7cff', nodeAlpha);
   }
 
-  ['#65d6dc', '#f0658f'].forEach((color, strandIndex) => {
+  ['#69c7ff', '#2f7cff'].forEach((color, strandIndex) => {
     const points = strandIndex === 0 ? dnaA : dnaB;
     molecularContext.strokeStyle = color;
     molecularContext.globalAlpha = 0.36 * strandAlpha;
@@ -172,9 +172,9 @@ function drawMolecularAssembly(progress, time) {
     const x = lerp(startX, centerX + Math.cos(targetAngle) * targetRadius, assembly) + Math.cos(targetAngle + Math.PI / 2) * swirl;
     const y = lerp(startY, centerY + Math.sin(targetAngle) * targetRadius * 0.84, assembly) + Math.sin(targetAngle + Math.PI / 2) * swirl;
     rnaPoints.push([x, y]);
-    drawNode(x, y, 2.1 + (index % 3) * 0.5, index % 4 === 0 ? '#d8fa71' : '#8a7df0', nodeAlpha);
+    drawNode(x, y, 2.1 + (index % 3) * 0.5, index % 4 === 0 ? '#f5f8ff' : '#8eb5ff', nodeAlpha);
   }
-  molecularContext.strokeStyle = '#d8fa71';
+  molecularContext.strokeStyle = '#f5f8ff';
   molecularContext.globalAlpha = 0.34 * strandAlpha;
   molecularContext.lineWidth = 1.1;
   molecularContext.beginPath();
@@ -186,8 +186,8 @@ function drawMolecularAssembly(progress, time) {
     molecularContext.save();
     molecularContext.translate(centerX, centerY);
     molecularContext.rotate(motionTime * 0.055);
-    molecularContext.strokeStyle = `rgba(149, 126, 242, ${0.54 * assembly * scaffoldAlpha})`;
-    molecularContext.shadowColor = '#8a7df0';
+    molecularContext.strokeStyle = `rgba(142, 181, 255, ${0.56 * assembly * scaffoldAlpha})`;
+    molecularContext.shadowColor = '#2f7cff';
     molecularContext.shadowBlur = 18;
     molecularContext.lineWidth = 1.25;
     molecularContext.setLineDash([3, 7]);
@@ -202,8 +202,8 @@ function drawMolecularAssembly(progress, time) {
     molecularContext.save();
     molecularContext.translate(centerX, centerY);
     molecularContext.rotate(-motionTime * 0.025);
-    molecularContext.strokeStyle = `rgba(240, 101, 143, ${0.56 * membrane * scaffoldAlpha})`;
-    molecularContext.shadowColor = '#f0658f';
+    molecularContext.strokeStyle = `rgba(47, 124, 255, ${0.62 * membrane * scaffoldAlpha})`;
+    molecularContext.shadowColor = '#2f7cff';
     molecularContext.shadowBlur = 22;
     molecularContext.lineWidth = 1.8;
     molecularContext.beginPath();
@@ -217,7 +217,7 @@ function drawMolecularAssembly(progress, time) {
     molecularContext.closePath();
     molecularContext.stroke();
 
-    molecularContext.strokeStyle = `rgba(101, 214, 220, ${0.22 * membrane * scaffoldAlpha})`;
+    molecularContext.strokeStyle = `rgba(105, 199, 255, ${0.24 * membrane * scaffoldAlpha})`;
     molecularContext.lineWidth = 0.8;
     for (let index = 0; index < 11; index += 1) {
       const angle = index / 11 * Math.PI * 2 + 0.35;
