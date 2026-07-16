@@ -29,8 +29,8 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 
 const states = [
   { modality: 'DNA · RNA ENCODERS', value: 'DNA + RNA', name: 'MOLECULAR SIGNAL', context: 'INPUT SPACE' },
-  { modality: 'SINGLE-CELL REPRESENTATION', value: '10 μm', name: 'ONE CELL', context: 'PHENOTYPE' },
-  { modality: 'LIQUID BIOPSY · SEARCH', value: '1 in millions', name: 'RARE EVENT', context: 'SEARCH SPACE' },
+  { modality: 'CONTRASTIVE LEARNING · IF', value: '10 μm', name: 'SINGLE-CELL PHENOTYPING', context: 'FEATURE SPACE' },
+  { modality: 'DENOISING AUTOENCODER · RED', value: '2.5M → 2,500', name: 'RARITY RANKING', context: 'RECONSTRUCTION ERROR' },
   { modality: 'H&E · WHOLE TISSUE', value: '10 mm', name: 'TISSUE CONTEXT', context: 'FIELD OF VIEW' },
   { modality: 'MULTIMODAL FOUNDATION MODEL', value: '1 patient', name: 'UNIFIED REPRESENTATION', context: 'MODEL CONTEXT' }
 ];
