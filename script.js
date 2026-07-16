@@ -38,15 +38,15 @@ const states = [
 const STEP_BREAKS = [0.23, 0.43, 0.65, 0.83];
 const STORY_TIMELINE = [
   [0, 0],
-  [0.14, 0],
+  [0.1, 0],
   [0.22, 0.31],
-  [0.35, 0.31],
-  [0.43, 0.54],
-  [0.56, 0.54],
-  [0.64, 0.76],
-  [0.77, 0.76],
-  [0.85, 0.92],
-  [0.96, 0.92],
+  [0.3, 0.31],
+  [0.42, 0.54],
+  [0.5, 0.54],
+  [0.62, 0.76],
+  [0.7, 0.76],
+  [0.83, 0.92],
+  [0.92, 0.92],
   [1, 1]
 ];
 const AUTO_SWITCH_DELAY = 900;
@@ -251,7 +251,7 @@ function mapScrollProgress(progress) {
     const [endScroll, endProgress] = STORY_TIMELINE[index + 1];
     if (rawProgress > endScroll) continue;
     if (startProgress === endProgress) return startProgress;
-    return lerp(startProgress, endProgress, smoothstep(startScroll, endScroll, rawProgress));
+    return lerp(startProgress, endProgress, (rawProgress - startScroll) / (endScroll - startScroll));
   }
   return STORY_TIMELINE[STORY_TIMELINE.length - 1][1];
 }
