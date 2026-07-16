@@ -36,9 +36,19 @@ const states = [
 ];
 
 const STEP_BREAKS = [0.23, 0.43, 0.65, 0.83];
-const STEP_RESTS = [0, 0.31, 0.54, 0.76, 0.92];
-const STORY_HOLD = 0.105;
-const SNAP_IDLE_MS = 170;
+const STORY_TIMELINE = [
+  [0, 0],
+  [0.14, 0],
+  [0.22, 0.31],
+  [0.35, 0.31],
+  [0.43, 0.54],
+  [0.56, 0.54],
+  [0.64, 0.76],
+  [0.77, 0.76],
+  [0.85, 0.92],
+  [0.96, 0.92],
+  [1, 1]
+];
 const AUTO_SWITCH_DELAY = 900;
 const AUTO_SWITCH_MS = 1450;
 let targetProgress = 0;
@@ -52,12 +62,6 @@ let tissueEnteredAt = 0;
 let canvasWidth = 0;
 let canvasHeight = 0;
 let canvasDpr = 1;
-let scrollDirection = 0;
-let lastScrollY = window.scrollY;
-let lastSettledStep = 0;
-let snapTimer = 0;
-let snapFrame = 0;
-let isSnapping = false;
 
 function resizeMolecularCanvas() {
   const nextWidth = Math.max(1, Math.round(stage.clientWidth));
@@ -241,95 +245,15 @@ function stepFromProgress(progress) {
 }
 
 function mapScrollProgress(progress) {
-  if (progress <= STORY_HOLD) return 0;
-  const released = clamp((progress - STORY_HOLD) / (1 - STORY_HOLD));
-  return Math.pow(released, 1.08);
-}
-
-function rawProgressFromMapped(progress) {
-  if (progress <= 0) return 0;
-  return STORY_HOLD + Math.pow(clamp(progress), 1 / 1.08) * (1 - STORY_HOLD);
-}
-
-function closestRestIndex(progress) {
-  return STEP_RESTS.reduce((closest, rest, index) => (
-    Math.abs(rest - progress) < Math.abs(STEP_RESTS[closest] - progress) ? index : closest
-  ), 0);
-}
-
-function scrollYForRest(index) {
-  const distance = Math.max(1, story.offsetHeight - window.innerHeight);
-  return story.offsetTop + rawProgressFromMapped(STEP_RESTS[index]) * distance;
-}
-
-function cancelStorySnap() {
-  if (snapFrame) cancelAnimationFrame(snapFrame);
-  snapFrame = 0;
-  isSnapping = false;
-}
-
-function animateToRest(index) {
-  const startY = window.scrollY;
-  const targetY = scrollYForRest(index);
-  const distance = targetY - startY;
-  if (Math.abs(distance) < 3) {
-    lastSettledStep = index;
-    return;
+  const rawProgress = clamp(progress);
+  for (let index = 0; index < STORY_TIMELINE.length - 1; index += 1) {
+    const [startScroll, startProgress] = STORY_TIMELINE[index];
+    const [endScroll, endProgress] = STORY_TIMELINE[index + 1];
+    if (rawProgress > endScroll) continue;
+    if (startProgress === endProgress) return startProgress;
+    return lerp(startProgress, endProgress, smoothstep(startScroll, endScroll, rawProgress));
   }
-
-  cancelStorySnap();
-  isSnapping = true;
-  const startedAt = performance.now();
-  const duration = reduceMotion ? 0 : clamp(360 + Math.abs(distance) * 0.16, 420, 780);
-
-  const tick = (time) => {
-    const amount = duration === 0 ? 1 : clamp((time - startedAt) / duration);
-    const eased = 1 - Math.pow(1 - amount, 5);
-    window.scrollTo(0, startY + distance * eased);
-    if (amount < 1) {
-      snapFrame = requestAnimationFrame(tick);
-      return;
-    }
-
-    snapFrame = 0;
-    isSnapping = false;
-    lastSettledStep = index;
-    lastScrollY = window.scrollY;
-    measureProgress();
-  };
-
-  snapFrame = requestAnimationFrame(tick);
-}
-
-function settleStory() {
-  if (isSnapping) return;
-  const rect = story.getBoundingClientRect();
-  const storyActive = rect.top <= 2 && rect.bottom >= window.innerHeight - 2;
-  if (!storyActive) return;
-
-  const distance = Math.max(1, rect.height - window.innerHeight);
-  const rawProgress = clamp(-rect.top / distance);
-  const progress = mapScrollProgress(rawProgress);
-  const origin = STEP_RESTS[lastSettledStep];
-  const threshold = lastSettledStep === 0 ? 0.018 : 0.012;
-  let targetStep = lastSettledStep;
-
-  if (scrollDirection > 0) {
-    if (lastSettledStep === STEP_RESTS.length - 1 && progress > origin + threshold) return;
-    if (progress > origin + threshold) targetStep = Math.min(lastSettledStep + 1, STEP_RESTS.length - 1);
-  } else if (scrollDirection < 0) {
-    if (lastSettledStep === 0 && rect.top > -2) return;
-    if (progress < origin - threshold) targetStep = Math.max(lastSettledStep - 1, 0);
-  } else {
-    targetStep = closestRestIndex(progress);
-  }
-
-  animateToRest(targetStep);
-}
-
-function scheduleStorySettle() {
-  window.clearTimeout(snapTimer);
-  snapTimer = window.setTimeout(settleStory, SNAP_IDLE_MS);
+  return STORY_TIMELINE[STORY_TIMELINE.length - 1][1];
 }
 
 function measureProgress() {
@@ -345,13 +269,7 @@ function measureProgress() {
 }
 
 function handleScroll() {
-  const nextScrollY = window.scrollY;
-  if (!isSnapping && Math.abs(nextScrollY - lastScrollY) > 0.5) {
-    scrollDirection = Math.sign(nextScrollY - lastScrollY);
-  }
-  lastScrollY = nextScrollY;
   measureProgress();
-  if (!isSnapping) scheduleStorySettle();
 }
 
 function applyStep(step, time) {
@@ -442,7 +360,7 @@ function positionCell(progress) {
 function renderFrame(time) {
   const frameDelta = Math.min(48, previousFrameTime ? time - previousFrameTime : 16.7);
   previousFrameTime = time;
-  const progressEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * (isSnapping ? 0.024 : 0.0105));
+  const progressEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.0105);
   visualProgress += (targetProgress - visualProgress) * progressEase;
   if (Math.abs(targetProgress - visualProgress) < 0.0001) visualProgress = targetProgress;
 
@@ -515,13 +433,7 @@ window.addEventListener('resize', () => {
   resizeMolecularCanvas();
   measureProgress();
 });
-window.addEventListener('wheel', cancelStorySnap, { passive: true });
-window.addEventListener('touchstart', cancelStorySnap, { passive: true });
-window.addEventListener('keydown', (event) => {
-  if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(event.key)) cancelStorySnap();
-});
 measureProgress();
-lastSettledStep = closestRestIndex(targetProgress);
 applyStep(0, performance.now());
 requestAnimationFrame(renderFrame);
 document.querySelector('#year').textContent = new Date().getFullYear();

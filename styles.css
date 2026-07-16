@@ -86,7 +86,7 @@ h1 em, h2 em, blockquote em { font-family: var(--serif); font-weight: 400; }
 .scroll-cue i { display: block; width: 28px; height: 1px; background: #7f9fca; animation: cue 1.8s ease-in-out infinite; transform-origin: right; }
 @keyframes cue { 50% { transform: scaleX(0.45); } }
 
-.scale-story { position: relative; height: 900vh; background: var(--night); }
+.scale-story { position: relative; height: 1050vh; background: var(--night); }
 .microscope-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; color: #f5f8ff; background: var(--night); isolation: isolate; }
 .stage-media, .molecular-scene, .bloodstream-layer, .tissue-layer, .patient-scene { position: absolute; inset: 0; }
 .molecular-scene, .bloodstream-layer, .cell-cinema, .tissue-layer, .patient-scene { will-change: opacity, transform; backface-visibility: hidden; }
@@ -273,7 +273,7 @@ footer p { justify-self: end; margin: 0; font: 9px/1 var(--mono); }
   .primary-link { margin-top: 26px; }
   .intro-meta { left: 20px; bottom: 24px; }
   .intro-meta span:last-child { display: none; }
-  .scale-story { height: 900vh; }
+  .scale-story { height: 1050vh; }
   .scale-chapter { padding: 92px 20px 116px; }
   .chapter-inner { width: 100%; }
   .scale-chapter h2 { max-width: 360px; font-size: clamp(43px, 13vw, 51px); }
