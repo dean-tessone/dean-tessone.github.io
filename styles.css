@@ -97,17 +97,8 @@ h1 em, h2 em, blockquote em { font-family: var(--serif); font-weight: 400; }
 .blood-flow { position: absolute; inset: -18%; opacity: 0.26; background: repeating-linear-gradient(101deg, transparent 0 90px, rgba(128, 216, 191, 0.09) 92px, transparent 94px 168px); transform: translateX(-12%); animation: blood-flow 7s linear infinite; mix-blend-mode: screen; }
 @keyframes blood-flow { to { transform: translateX(12%); } }
 
-.molecular-scene { z-index: 6; overflow: hidden; background: radial-gradient(circle at 68% 51%, rgba(82, 62, 148, 0.24), transparent 24%), radial-gradient(circle at 69% 51%, rgba(199, 68, 95, 0.08), transparent 42%); pointer-events: none; }
-.molecular-field { position: absolute; z-index: 2; inset: 0; }
-.molecular-particle { position: absolute; left: var(--x); top: var(--y); width: var(--size); height: var(--size); border-radius: 50%; background: var(--color); box-shadow: 0 0 15px var(--color); opacity: var(--alpha); animation: molecule-drift var(--duration) ease-in-out infinite alternate; animation-delay: var(--delay); }
-.molecular-particle::after { content: ""; position: absolute; left: 50%; top: 50%; width: var(--bond); height: 1px; background: linear-gradient(90deg, var(--color), transparent); opacity: 0.38; transform: rotate(var(--angle)); transform-origin: left; }
-@keyframes molecule-drift { to { translate: var(--dx) var(--dy); opacity: calc(var(--alpha) * 0.52); } }
-.molecular-helix { position: absolute; z-index: 3; left: 68%; top: 51%; width: min(23vw, 310px); height: min(61vh, 580px); transform: translate(-50%, -50%) rotate(8deg); filter: drop-shadow(0 0 24px rgba(128, 216, 191, 0.18)); transform-origin: center; }
-.helix-rung { position: absolute; left: 50%; top: var(--y); width: 74%; height: 1px; background: linear-gradient(90deg, #58c6ce, rgba(216, 250, 113, 0.78) 50%, #c95584); transform: translateX(-50%) scaleX(var(--depth)); animation: helix-turn 3.4s ease-in-out infinite; animation-delay: var(--delay); }
-.helix-rung::before, .helix-rung::after { content: ""; position: absolute; top: 50%; width: 9px; height: 9px; border: 1px solid currentColor; border-radius: 50%; background: #050a16; box-shadow: 0 0 12px currentColor; transform: translateY(-50%); }
-.helix-rung::before { left: -4px; color: #65d6dc; }
-.helix-rung::after { right: -4px; color: #f0658f; }
-@keyframes helix-turn { 50% { transform: translateX(-50%) scaleX(0.1); opacity: 0.42; } }
+.molecular-scene { z-index: 6; overflow: hidden; background: radial-gradient(circle at 68% 51%, rgba(82, 62, 148, 0.15), transparent 22%), radial-gradient(circle at 69% 51%, rgba(199, 68, 95, 0.06), transparent 41%); pointer-events: none; }
+.molecular-canvas { position: absolute; z-index: 3; inset: 0; width: 100%; height: 100%; }
 .molecular-caption { position: absolute; z-index: 4; left: 68%; bottom: 9%; display: flex; align-items: center; gap: 11px; color: rgba(226, 244, 239, 0.64); font: 500 8px/1 var(--mono); letter-spacing: 0.14em; transform: translateX(-50%); }
 .molecular-caption i { display: block; width: 32px; height: 1px; background: linear-gradient(90deg, #65d6dc, #f0658f); }
 
@@ -255,7 +246,6 @@ footer p { justify-self: end; margin: 0; font: 9px/1 var(--mono); }
       linear-gradient(90deg, rgba(1, 8, 13, 0.22), transparent 50%, rgba(1, 8, 13, 0.12));
   }
   .molecular-scene { background: radial-gradient(circle at 50% 75%, rgba(82, 62, 148, 0.24), transparent 24%), radial-gradient(circle at 50% 75%, rgba(199, 68, 95, 0.08), transparent 42%); }
-  .molecular-helix { left: 50%; top: 75%; width: min(38vw, 180px); height: min(34vh, 290px); }
   .molecular-caption { left: 50%; bottom: 5.5%; }
   .cell-cinema { width: min(92vw, 560px); }
   .patient-map { left: 50%; top: 74%; width: 132px; height: 300px; }
@@ -333,6 +323,6 @@ footer p { justify-self: end; margin: 0; font: 9px/1 var(--mono); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .scroll-cue i, .fusion-ring, .helix-rung, .molecular-particle, .blood-flow, .patient-signal, .patient-focus { animation: none; }
+  .scroll-cue i, .fusion-ring, .blood-flow, .patient-signal, .patient-focus { animation: none; }
   .scale-chapter, .molecular-scene, .bloodstream-layer, .cell-cinema, .tissue-layer, .patient-scene, .fusion-model { transition: none; }
 }

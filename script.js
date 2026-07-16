@@ -20,8 +20,8 @@ const scaleContext = document.querySelector('#scale-context');
 const railProgress = document.querySelector('#rail-progress');
 const pageProgress = document.querySelector('#page-progress');
 const header = document.querySelector('.site-header');
-const molecularHelix = document.querySelector('#molecular-helix');
-const molecularField = document.querySelector('#molecular-field');
+const molecularCanvas = document.querySelector('#molecular-canvas');
+const molecularContext = molecularCanvas.getContext('2d');
 const molecularCaption = document.querySelector('.molecular-caption');
 const cellBloom = document.querySelector('#cell-bloom');
 const fusionModel = document.querySelector('#fusion-model');
@@ -47,40 +47,181 @@ let manualMode = null;
 let imcBlend = 0;
 let previousFrameTime = 0;
 let tissueEnteredAt = 0;
+let canvasWidth = 0;
+let canvasHeight = 0;
+let canvasDpr = 1;
 
-function buildMolecularField() {
-  for (let index = 0; index < 21; index += 1) {
-    const rung = document.createElement('i');
-    const phase = index * 0.52;
-    rung.className = 'helix-rung';
-    rung.style.setProperty('--y', `${3 + index * 4.7}%`);
-    rung.style.setProperty('--depth', `${0.2 + Math.abs(Math.cos(phase)) * 0.8}`);
-    rung.style.setProperty('--delay', `${index * -0.16}s`);
-    molecularHelix.appendChild(rung);
+function resizeMolecularCanvas() {
+  const nextWidth = Math.max(1, Math.round(stage.clientWidth));
+  const nextHeight = Math.max(1, Math.round(stage.clientHeight));
+  const nextDpr = Math.min(2, window.devicePixelRatio || 1);
+  if (nextWidth === canvasWidth && nextHeight === canvasHeight && nextDpr === canvasDpr) return;
+
+  canvasWidth = nextWidth;
+  canvasHeight = nextHeight;
+  canvasDpr = nextDpr;
+  molecularCanvas.width = Math.round(canvasWidth * canvasDpr);
+  molecularCanvas.height = Math.round(canvasHeight * canvasDpr);
+  molecularContext.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
+}
+
+function drawNode(x, y, radius, color, alpha) {
+  if (alpha <= 0.002) return;
+  molecularContext.save();
+  molecularContext.globalAlpha = alpha;
+  molecularContext.fillStyle = color;
+  molecularContext.shadowColor = color;
+  molecularContext.shadowBlur = radius * 3.2;
+  molecularContext.beginPath();
+  molecularContext.arc(x, y, radius, 0, Math.PI * 2);
+  molecularContext.fill();
+  molecularContext.restore();
+}
+
+function drawMolecularAssembly(progress, time) {
+  resizeMolecularCanvas();
+  molecularContext.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
+  molecularContext.clearRect(0, 0, canvasWidth, canvasHeight);
+  if (progress > 0.315) return;
+
+  const mobile = window.innerWidth <= 900;
+  const movement = smoothstep(0.155, 0.235, progress);
+  const assembly = smoothstep(0.065, 0.19, progress);
+  const membrane = smoothstep(0.145, 0.245, progress);
+  const scaffoldAlpha = 1 - smoothstep(0.225, 0.305, progress);
+  const motionTime = reduceMotion ? 0 : time * 0.001;
+  const centerX = lerp(mobile ? canvasWidth * 0.5 : canvasWidth * 0.68, mobile ? canvasWidth * 0.5 : canvasWidth * 0.33, movement);
+  const centerY = lerp(mobile ? canvasHeight * 0.75 : canvasHeight * 0.51, mobile ? canvasHeight * 0.75 : canvasHeight * 0.52, movement);
+  const helixHeight = mobile ? Math.min(250, canvasHeight * 0.31) : Math.min(480, canvasHeight * 0.64);
+  const helixWidth = mobile ? 34 : 54;
+  const nucleusRadius = mobile ? 48 : 76;
+  const cellRadius = lerp(mobile ? 102 : 174, mobile ? 122 : 238, movement);
+  const dnaCenterX = centerX - (mobile ? 42 : 78) * (1 - assembly);
+  const rnaCenterX = centerX + (mobile ? 58 : 112) * (1 - assembly);
+  const strandAlpha = (1 - assembly) * scaffoldAlpha;
+  const nodeAlpha = (0.48 + assembly * 0.35) * scaffoldAlpha;
+
+  const halo = molecularContext.createRadialGradient(centerX, centerY, 0, centerX, centerY, cellRadius * 1.3);
+  halo.addColorStop(0, `rgba(119, 91, 206, ${0.14 * assembly})`);
+  halo.addColorStop(0.45, `rgba(211, 72, 112, ${0.055 * membrane})`);
+  halo.addColorStop(1, 'rgba(3, 8, 18, 0)');
+  molecularContext.fillStyle = halo;
+  molecularContext.beginPath();
+  molecularContext.arc(centerX, centerY, cellRadius * 1.3, 0, Math.PI * 2);
+  molecularContext.fill();
+
+  molecularContext.globalCompositeOperation = 'lighter';
+  const dnaA = [];
+  const dnaB = [];
+  const rungCount = 20;
+  for (let index = 0; index < rungCount; index += 1) {
+    const amount = index / (rungCount - 1);
+    const y = centerY - helixHeight / 2 + amount * helixHeight;
+    const twist = amount * Math.PI * 5.5 + motionTime * 0.72;
+    const startAx = dnaCenterX + Math.cos(twist) * helixWidth;
+    const startBx = dnaCenterX - Math.cos(twist) * helixWidth;
+    const targetAngleA = index * 2.08 + motionTime * 0.19;
+    const targetAngleB = targetAngleA + Math.PI;
+    const targetRadius = nucleusRadius * (0.68 + (index % 4) * 0.065);
+    const swirl = Math.sin(assembly * Math.PI) * (mobile ? 22 : 38);
+    const ax = lerp(startAx, centerX + Math.cos(targetAngleA) * targetRadius, assembly) + Math.cos(targetAngleA + Math.PI / 2) * swirl;
+    const ay = lerp(y, centerY + Math.sin(targetAngleA) * targetRadius * 0.84, assembly) + Math.sin(targetAngleA + Math.PI / 2) * swirl;
+    const bx = lerp(startBx, centerX + Math.cos(targetAngleB) * targetRadius, assembly) + Math.cos(targetAngleB + Math.PI / 2) * swirl;
+    const by = lerp(y, centerY + Math.sin(targetAngleB) * targetRadius * 0.84, assembly) + Math.sin(targetAngleB + Math.PI / 2) * swirl;
+    dnaA.push([ax, ay]);
+    dnaB.push([bx, by]);
+
+    molecularContext.strokeStyle = `rgba(216, 250, 113, ${0.34 * strandAlpha})`;
+    molecularContext.lineWidth = 1;
+    molecularContext.beginPath();
+    molecularContext.moveTo(ax, ay);
+    molecularContext.lineTo(bx, by);
+    molecularContext.stroke();
+    drawNode(ax, ay, 2.3 + (index % 3) * 0.45, '#65d6dc', nodeAlpha);
+    drawNode(bx, by, 2.3 + ((index + 1) % 3) * 0.45, '#f0658f', nodeAlpha);
   }
 
-  const colors = ['#65d6dc', '#f0658f', '#8a7df0', '#d8fa71'];
-  for (let index = 0; index < 34; index += 1) {
-    const particle = document.createElement('i');
-    const angle = index * 2.399;
-    const radius = 6 + (index % 8) * 4.4;
-    const x = 68 + Math.cos(angle) * radius;
-    const y = 51 + Math.sin(angle) * radius * 0.72;
-    const size = 2 + (index % 4) * 1.2;
-    particle.className = 'molecular-particle';
-    particle.style.setProperty('--x', `${x}%`);
-    particle.style.setProperty('--y', `${y}%`);
-    particle.style.setProperty('--size', `${size}px`);
-    particle.style.setProperty('--color', colors[index % colors.length]);
-    particle.style.setProperty('--alpha', `${0.18 + (index % 5) * 0.08}`);
-    particle.style.setProperty('--duration', `${3.8 + (index % 6) * 0.7}s`);
-    particle.style.setProperty('--delay', `${index * -0.21}s`);
-    particle.style.setProperty('--dx', `${Math.cos(angle + 0.8) * 13}px`);
-    particle.style.setProperty('--dy', `${Math.sin(angle + 0.8) * 11}px`);
-    particle.style.setProperty('--bond', `${8 + (index % 5) * 5}px`);
-    particle.style.setProperty('--angle', `${(angle * 57.3) % 360}deg`);
-    molecularField.appendChild(particle);
+  ['#65d6dc', '#f0658f'].forEach((color, strandIndex) => {
+    const points = strandIndex === 0 ? dnaA : dnaB;
+    molecularContext.strokeStyle = color;
+    molecularContext.globalAlpha = 0.36 * strandAlpha;
+    molecularContext.lineWidth = 1.2;
+    molecularContext.beginPath();
+    points.forEach(([x, y], index) => index ? molecularContext.lineTo(x, y) : molecularContext.moveTo(x, y));
+    molecularContext.stroke();
+    molecularContext.globalAlpha = 1;
+  });
+
+  const rnaPoints = [];
+  const rnaCount = 17;
+  for (let index = 0; index < rnaCount; index += 1) {
+    const amount = index / (rnaCount - 1);
+    const startX = rnaCenterX + Math.sin(amount * Math.PI * 4.2 + motionTime * 0.55) * (mobile ? 18 : 27);
+    const startY = centerY - helixHeight * 0.39 + amount * helixHeight * 0.78;
+    const targetAngle = index * 2.36 + 0.8 + motionTime * 0.16;
+    const targetRadius = nucleusRadius * (0.5 + (index % 5) * 0.075);
+    const swirl = Math.sin(assembly * Math.PI) * (mobile ? 24 : 42);
+    const x = lerp(startX, centerX + Math.cos(targetAngle) * targetRadius, assembly) + Math.cos(targetAngle + Math.PI / 2) * swirl;
+    const y = lerp(startY, centerY + Math.sin(targetAngle) * targetRadius * 0.84, assembly) + Math.sin(targetAngle + Math.PI / 2) * swirl;
+    rnaPoints.push([x, y]);
+    drawNode(x, y, 2.1 + (index % 3) * 0.5, index % 4 === 0 ? '#d8fa71' : '#8a7df0', nodeAlpha);
   }
+  molecularContext.strokeStyle = '#d8fa71';
+  molecularContext.globalAlpha = 0.34 * strandAlpha;
+  molecularContext.lineWidth = 1.1;
+  molecularContext.beginPath();
+  rnaPoints.forEach(([x, y], index) => index ? molecularContext.lineTo(x, y) : molecularContext.moveTo(x, y));
+  molecularContext.stroke();
+  molecularContext.globalAlpha = 1;
+
+  if (assembly > 0.01) {
+    molecularContext.save();
+    molecularContext.translate(centerX, centerY);
+    molecularContext.rotate(motionTime * 0.055);
+    molecularContext.strokeStyle = `rgba(149, 126, 242, ${0.54 * assembly * scaffoldAlpha})`;
+    molecularContext.shadowColor = '#8a7df0';
+    molecularContext.shadowBlur = 18;
+    molecularContext.lineWidth = 1.25;
+    molecularContext.setLineDash([3, 7]);
+    molecularContext.beginPath();
+    molecularContext.ellipse(0, 0, nucleusRadius * 1.08, nucleusRadius * 0.86, -0.2, 0, Math.PI * 2);
+    molecularContext.stroke();
+    molecularContext.restore();
+  }
+
+  if (membrane > 0.01) {
+    const ringRadius = lerp(nucleusRadius * 0.92, cellRadius, membrane);
+    molecularContext.save();
+    molecularContext.translate(centerX, centerY);
+    molecularContext.rotate(-motionTime * 0.025);
+    molecularContext.strokeStyle = `rgba(240, 101, 143, ${0.56 * membrane * scaffoldAlpha})`;
+    molecularContext.shadowColor = '#f0658f';
+    molecularContext.shadowBlur = 22;
+    molecularContext.lineWidth = 1.8;
+    molecularContext.beginPath();
+    for (let index = 0; index <= 72; index += 1) {
+      const angle = index / 72 * Math.PI * 2;
+      const variance = 1 + Math.sin(angle * 7 + 0.4) * 0.035 + Math.cos(angle * 11) * 0.018;
+      const x = Math.cos(angle) * ringRadius * variance;
+      const y = Math.sin(angle) * ringRadius * 0.94 * variance;
+      index ? molecularContext.lineTo(x, y) : molecularContext.moveTo(x, y);
+    }
+    molecularContext.closePath();
+    molecularContext.stroke();
+
+    molecularContext.strokeStyle = `rgba(101, 214, 220, ${0.22 * membrane * scaffoldAlpha})`;
+    molecularContext.lineWidth = 0.8;
+    for (let index = 0; index < 11; index += 1) {
+      const angle = index / 11 * Math.PI * 2 + 0.35;
+      molecularContext.beginPath();
+      molecularContext.moveTo(Math.cos(angle) * nucleusRadius * 0.82, Math.sin(angle) * nucleusRadius * 0.68);
+      molecularContext.quadraticCurveTo(Math.cos(angle + 0.8) * ringRadius * 0.62, Math.sin(angle + 0.8) * ringRadius * 0.5, Math.cos(angle) * ringRadius * 0.94, Math.sin(angle) * ringRadius * 0.88);
+      molecularContext.stroke();
+    }
+    molecularContext.restore();
+  }
+
+  molecularContext.globalCompositeOperation = 'source-over';
 }
 
 function stepFromProgress(progress) {
@@ -162,7 +303,7 @@ function updateModalityControl(showingImc) {
 
 function positionCell(progress) {
   const mobile = window.innerWidth <= 900;
-  const pullBack = smoothstep(0.055, 0.25, progress);
+  const pullBack = smoothstep(0.155, 0.235, progress);
   const enterVessel = smoothstep(0.39, 0.48, progress);
   const vesselTravel = smoothstep(0.44, 0.67, progress);
   const startX = mobile ? 50 : 68;
@@ -175,8 +316,8 @@ function positionCell(progress) {
 
   let x = lerp(startX, cellX, pullBack);
   let y = lerp(startY, cellY, pullBack);
-  let scale = lerp(mobile ? 3.05 : 3.75, mobile ? 0.76 : 0.86, pullBack);
-  let rotation = lerp(2.5, -1.5, pullBack);
+  let scale = lerp(0.62, mobile ? 0.76 : 0.86, pullBack);
+  let rotation = lerp(0, -1.5, pullBack);
 
   if (enterVessel > 0) {
     x = lerp(cellX, lerp(vesselX, endX, vesselTravel), enterVessel);
@@ -211,9 +352,9 @@ function renderFrame(time) {
   if (Math.abs(imcBlend - (requestedImc ? 1 : 0)) < 0.002) imcBlend = requestedImc ? 1 : 0;
   updateModalityControl(imcBlend >= 0.5);
 
-  const helixFold = smoothstep(0.075, 0.225, progress);
-  const molecularAlpha = 1 - smoothstep(0.18, 0.3, progress);
-  const cellAlpha = (1 - smoothstep(0.665, 0.705, progress)) * (1 - smoothstep(0, 0.035, progress) * 0.04);
+  const molecularAlpha = 1 - smoothstep(0.235, 0.31, progress);
+  const cellResolve = smoothstep(0.145, 0.235, progress);
+  const cellAlpha = cellResolve * (1 - smoothstep(0.665, 0.705, progress));
   const bloodstreamAlpha = smoothstep(0.39, 0.47, progress) * (1 - smoothstep(0.64, 0.71, progress));
   const tissueReveal = smoothstep(0.65, 0.72, progress);
   const patientReveal = smoothstep(0.83, 0.91, progress);
@@ -228,11 +369,9 @@ function renderFrame(time) {
   setOpacity(layers.patient, patientReveal);
 
   positionCell(progress);
-  const helixScale = lerp(1, 0.2, helixFold);
-  setTransform(molecularHelix, `translate(-50%, -50%) rotate(${lerp(8, 38, helixFold).toFixed(2)}deg) scale(${helixScale.toFixed(3)})`);
-  setOpacity(molecularHelix, 1 - smoothstep(0.15, 0.23, progress));
-  setOpacity(molecularField, 1 - smoothstep(0.13, 0.25, progress));
-  setOpacity(molecularCaption, 1 - smoothstep(0.09, 0.17, progress));
+  setClip(layers.cell, lerp(2, 76, cellResolve), 50, 50);
+  drawMolecularAssembly(progress, time);
+  setOpacity(molecularCaption, 1 - smoothstep(0.075, 0.16, progress));
 
   const vesselPan = smoothstep(0.43, 0.66, progress);
   setTransform(layers.bloodstream, `scale(${lerp(1.04, 1, vesselPan).toFixed(3)}) translateX(${lerp(1.5, -1.5, vesselPan).toFixed(2)}%)`);
@@ -266,9 +405,12 @@ modalityOptions.forEach((option) => {
   });
 });
 
-buildMolecularField();
+resizeMolecularCanvas();
 window.addEventListener('scroll', measureProgress, { passive: true });
-window.addEventListener('resize', measureProgress);
+window.addEventListener('resize', () => {
+  resizeMolecularCanvas();
+  measureProgress();
+});
 measureProgress();
 applyStep(0, performance.now());
 requestAnimationFrame(renderFrame);

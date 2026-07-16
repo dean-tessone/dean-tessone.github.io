@@ -10,7 +10,7 @@
     <link rel="preload" as="image" href="assets/cancer-cell-cinematic-v1.jpg" fetchpriority="high" />
     <link rel="preload" as="image" href="assets/bloodstream-v1.jpg" />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Instrument+Serif:ital@0;1&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260715-cinematic" />
+    <link rel="stylesheet" href="styles.css?v=20260715-assembly" />
   </head>
   <body>
     <div class="noise" aria-hidden="true"></div>
@@ -50,8 +50,7 @@
         <div class="microscope-stage" id="microscope-stage">
           <div class="stage-media" role="img" aria-label="An animated biological journey from DNA and RNA, to a single cell, through the bloodstream and tissue, and outward to the whole patient.">
             <div class="molecular-scene" data-layer="molecules" aria-hidden="true">
-              <div class="molecular-field" id="molecular-field"></div>
-              <div class="molecular-helix" id="molecular-helix"></div>
+              <canvas class="molecular-canvas" id="molecular-canvas"></canvas>
               <div class="molecular-caption"><span>DNA</span><i></i><span>RNA</span></div>
             </div>
             <div class="bloodstream-layer" data-layer="bloodstream">
@@ -237,6 +236,6 @@
       <div class="footer-links"><a href="https://www.linkedin.com/in/deantessone/" target="_blank" rel="noreferrer">LinkedIn</a><a href="https://github.com/dean-tessone" target="_blank" rel="noreferrer">GitHub</a><a href="https://scholar.google.com/citations?user=ld6GwJsAAAAJ&amp;hl=en&amp;authuser=1" target="_blank" rel="noreferrer">Scholar</a></div>
       <p>© <span id="year"></span> Dean Tessone</p>
     </footer>
-    <script src="script.js?v=20260715-cinematic"></script>
+    <script src="script.js?v=20260715-assembly"></script>
   </body>
 </html>
