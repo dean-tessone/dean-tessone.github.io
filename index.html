@@ -7,10 +7,10 @@
     <title>Dean Tessone — Across Biological Scales</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="image" href="assets/cell-nucleus-v2.jpg" fetchpriority="high" />
+    <link rel="preload" as="image" href="assets/cancer-cell-cinematic-v1.jpg" fetchpriority="high" />
     <link rel="preload" as="image" href="assets/bloodstream-v1.jpg" />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Instrument+Serif:ital@0;1&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260715-outward" />
+    <link rel="stylesheet" href="styles.css?v=20260715-cinematic" />
   </head>
   <body>
     <div class="noise" aria-hidden="true"></div>
@@ -30,7 +30,7 @@
     <main id="top">
       <section class="intro" aria-labelledby="intro-title">
         <div class="intro-visual" aria-hidden="true">
-          <img src="assets/cell-nucleus-v2.jpg" alt="" />
+          <img src="assets/cancer-cell-cinematic-v1.jpg" alt="" />
           <div class="intro-lens"></div>
         </div>
         <div class="intro-copy">
@@ -50,26 +50,29 @@
         <div class="microscope-stage" id="microscope-stage">
           <div class="stage-media" role="img" aria-label="An animated biological journey from DNA and RNA, to a single cell, through the bloodstream and tissue, and outward to the whole patient.">
             <div class="molecular-scene" data-layer="molecules" aria-hidden="true">
-              <div class="molecule-orbit orbit-a"></div>
-              <div class="molecule-orbit orbit-b"></div>
-              <div class="dna-helix" id="dna-helix"></div>
-              <div class="rna-strand" id="rna-strand"></div>
-              <span class="assay-chip chip-snv">SNV</span>
-              <span class="assay-chip chip-cnv">CNV</span>
-              <span class="assay-chip chip-expression">EXPRESSION</span>
+              <div class="molecular-field" id="molecular-field"></div>
+              <div class="molecular-helix" id="molecular-helix"></div>
+              <div class="molecular-caption"><span>DNA</span><i></i><span>RNA</span></div>
             </div>
-            <div class="bloodstream-layer" data-layer="bloodstream"><img src="assets/bloodstream-v1.jpg" alt="" /></div>
-            <div class="cell-traveler" data-layer="cell"><img src="assets/single-cell-if-v2.jpg" alt="" /></div>
+            <div class="bloodstream-layer" data-layer="bloodstream">
+              <img src="assets/bloodstream-v1.jpg" alt="" />
+              <div class="blood-flow" aria-hidden="true"></div>
+            </div>
+            <div class="cell-cinema" data-layer="cell"><img src="assets/cancer-cell-cinematic-v1.jpg" alt="" /></div>
+            <div class="cell-bloom" id="cell-bloom" aria-hidden="true"></div>
             <div class="tissue-layer tissue-he" data-layer="tissue-he"><img src="assets/pathology-zoom-v1.jpg" alt="" /></div>
             <div class="tissue-layer tissue-imc" data-layer="tissue-imc"><img src="assets/tissue-imc-v2.jpg" alt="" /></div>
             <div class="patient-scene" data-layer="patient" aria-hidden="true">
               <div class="patient-grid"></div>
-              <div class="patient-figure"><i class="patient-head"></i><i class="patient-body"></i><b class="tumor-site"></b></div>
+              <svg class="patient-map" viewBox="0 0 360 700" aria-hidden="true">
+                <circle class="patient-outline" cx="180" cy="76" r="54"></circle>
+                <path class="patient-outline" d="M177 142C114 142 80 189 73 260L46 466C42 499 63 518 88 506L112 402L107 655M183 142C246 142 280 189 287 260L314 466C318 499 297 518 272 506L248 402L253 655M112 655L145 384M248 655L215 384M145 384C148 323 139 272 119 229M215 384C212 323 221 272 241 229"></path>
+                <path class="patient-signal" d="M180 157C178 216 189 246 178 294C166 342 188 377 180 434C173 482 185 532 180 603"></path>
+                <circle class="patient-focus" cx="188" cy="322" r="18"></circle>
+              </svg>
             </div>
             <div class="stage-vignette"></div>
           </div>
-
-          <div class="cell-trail" id="cell-trail" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
 
           <div class="stage-hud">
             <div class="hud-top">
@@ -81,7 +84,6 @@
               <i aria-hidden="true"></i>
               <button type="button" data-mode="imc" aria-pressed="false">IMC</button>
             </div>
-            <div class="focus-reticle" id="focus-reticle"><i></i><i></i><i></i><i></i><b>CIRCULATING RARE CELL</b></div>
             <div class="scale-readout">
               <small id="scale-context">INPUT SPACE</small>
               <strong id="scale-value">DNA + RNA</strong>
@@ -235,6 +237,6 @@
       <div class="footer-links"><a href="https://www.linkedin.com/in/deantessone/" target="_blank" rel="noreferrer">LinkedIn</a><a href="https://github.com/dean-tessone" target="_blank" rel="noreferrer">GitHub</a><a href="https://scholar.google.com/citations?user=ld6GwJsAAAAJ&amp;hl=en&amp;authuser=1" target="_blank" rel="noreferrer">Scholar</a></div>
       <p>© <span id="year"></span> Dean Tessone</p>
     </footer>
-    <script src="script.js?v=20260715-outward"></script>
+    <script src="script.js?v=20260715-cinematic"></script>
   </body>
 </html>

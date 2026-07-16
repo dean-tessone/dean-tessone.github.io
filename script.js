@@ -20,20 +20,25 @@ const scaleContext = document.querySelector('#scale-context');
 const railProgress = document.querySelector('#rail-progress');
 const pageProgress = document.querySelector('#page-progress');
 const header = document.querySelector('.site-header');
-const cellTrail = document.querySelector('#cell-trail');
+const molecularHelix = document.querySelector('#molecular-helix');
+const molecularField = document.querySelector('#molecular-field');
+const molecularCaption = document.querySelector('.molecular-caption');
+const cellBloom = document.querySelector('#cell-bloom');
+const fusionModel = document.querySelector('#fusion-model');
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const states = [
   { modality: 'DNA · RNA ENCODERS', value: 'DNA + RNA', name: 'MOLECULAR SIGNAL', context: 'INPUT SPACE' },
-  { modality: 'IF · SINGLE-CELL IMAGE', value: '10 μm', name: 'ONE CELL', context: 'PHENOTYPE' },
+  { modality: 'SINGLE-CELL REPRESENTATION', value: '10 μm', name: 'ONE CELL', context: 'PHENOTYPE' },
   { modality: 'LIQUID BIOPSY · SEARCH', value: '1 in millions', name: 'RARE EVENT', context: 'SEARCH SPACE' },
   { modality: 'H&E · WHOLE TISSUE', value: '10 mm', name: 'TISSUE CONTEXT', context: 'FIELD OF VIEW' },
   { modality: 'MULTIMODAL FOUNDATION MODEL', value: '1 patient', name: 'UNIFIED REPRESENTATION', context: 'MODEL CONTEXT' }
 ];
 
-const STEP_BREAKS = [0.18, 0.37, 0.58, 0.79];
-const AUTO_SWITCH_MS = 1550;
-const STORY_HOLD = 0.022;
+const STEP_BREAKS = [0.23, 0.43, 0.65, 0.83];
+const STORY_HOLD = 0.105;
+const AUTO_SWITCH_DELAY = 900;
+const AUTO_SWITCH_MS = 1450;
 let targetProgress = 0;
 let visualProgress = 0;
 let activeStep = -1;
@@ -43,25 +48,38 @@ let imcBlend = 0;
 let previousFrameTime = 0;
 let tissueEnteredAt = 0;
 
-function buildMolecules() {
-  const helix = document.querySelector('#dna-helix');
-  const rna = document.querySelector('#rna-strand');
-
-  for (let index = 0; index < 18; index += 1) {
+function buildMolecularField() {
+  for (let index = 0; index < 21; index += 1) {
     const rung = document.createElement('i');
-    rung.className = 'dna-rung';
-    rung.style.setProperty('--y', `${4 + index * 5.2}%`);
-    rung.style.setProperty('--delay', `${index * -0.19}s`);
-    helix.appendChild(rung);
+    const phase = index * 0.52;
+    rung.className = 'helix-rung';
+    rung.style.setProperty('--y', `${3 + index * 4.7}%`);
+    rung.style.setProperty('--depth', `${0.2 + Math.abs(Math.cos(phase)) * 0.8}`);
+    rung.style.setProperty('--delay', `${index * -0.16}s`);
+    molecularHelix.appendChild(rung);
   }
 
-  for (let index = 0; index < 15; index += 1) {
-    const bead = document.createElement('i');
-    bead.className = 'rna-bead';
-    bead.style.setProperty('--x', `${48 + Math.sin(index * 0.92) * 34}%`);
-    bead.style.setProperty('--y', `${4 + index * 6.5}%`);
-    bead.style.setProperty('--delay', `${index * -0.13}s`);
-    rna.appendChild(bead);
+  const colors = ['#65d6dc', '#f0658f', '#8a7df0', '#d8fa71'];
+  for (let index = 0; index < 34; index += 1) {
+    const particle = document.createElement('i');
+    const angle = index * 2.399;
+    const radius = 6 + (index % 8) * 4.4;
+    const x = 68 + Math.cos(angle) * radius;
+    const y = 51 + Math.sin(angle) * radius * 0.72;
+    const size = 2 + (index % 4) * 1.2;
+    particle.className = 'molecular-particle';
+    particle.style.setProperty('--x', `${x}%`);
+    particle.style.setProperty('--y', `${y}%`);
+    particle.style.setProperty('--size', `${size}px`);
+    particle.style.setProperty('--color', colors[index % colors.length]);
+    particle.style.setProperty('--alpha', `${0.18 + (index % 5) * 0.08}`);
+    particle.style.setProperty('--duration', `${3.8 + (index % 6) * 0.7}s`);
+    particle.style.setProperty('--delay', `${index * -0.21}s`);
+    particle.style.setProperty('--dx', `${Math.cos(angle + 0.8) * 13}px`);
+    particle.style.setProperty('--dy', `${Math.sin(angle + 0.8) * 11}px`);
+    particle.style.setProperty('--bond', `${8 + (index % 5) * 5}px`);
+    particle.style.setProperty('--angle', `${(angle * 57.3) % 360}deg`);
+    molecularField.appendChild(particle);
   }
 }
 
@@ -75,15 +93,14 @@ function stepFromProgress(progress) {
 
 function mapScrollProgress(progress) {
   if (progress <= STORY_HOLD) return 0;
-  const released = (progress - STORY_HOLD) / (1 - STORY_HOLD);
-  return Math.pow(clamp(released), 1.035);
+  const released = clamp((progress - STORY_HOLD) / (1 - STORY_HOLD));
+  return Math.pow(released, 1.08);
 }
 
 function measureProgress() {
   const rect = story.getBoundingClientRect();
   const distance = Math.max(1, rect.height - window.innerHeight);
-  const rawProgress = clamp(-rect.top / distance);
-  targetProgress = mapScrollProgress(rawProgress);
+  targetProgress = mapScrollProgress(clamp(-rect.top / distance));
   storyVisible = rect.bottom > 0 && rect.top < window.innerHeight;
 
   const pageMax = document.documentElement.scrollHeight - window.innerHeight;
@@ -112,26 +129,26 @@ function applyStep(step, time) {
   scaleContext.textContent = state.context;
 }
 
-function setOpacity(layer, value) {
+function setOpacity(element, value) {
   const next = clamp(value).toFixed(3);
-  if (layer.style.opacity !== next) layer.style.opacity = next;
+  if (element.style.opacity !== next) element.style.opacity = next;
 }
 
-function setTransform(layer, value) {
-  if (layer.style.transform !== value) layer.style.transform = value;
+function setTransform(element, value) {
+  if (element.style.transform !== value) element.style.transform = value;
 }
 
-function setClip(layer, radius, x, y) {
+function setClip(element, radius, x, y) {
   const next = `circle(${Math.max(0, radius).toFixed(2)}% at ${x.toFixed(2)}% ${y.toFixed(2)}%)`;
-  if (layer.style.clipPath !== next) layer.style.clipPath = next;
+  if (element.style.clipPath !== next) element.style.clipPath = next;
 }
 
 function desiredImcState(time) {
   if (!storyVisible || activeStep !== 3) return false;
   if (manualMode) return manualMode === 'imc';
   const elapsed = time - tissueEnteredAt;
-  if (elapsed < 1100) return false;
-  return Math.floor((elapsed - 1100) / AUTO_SWITCH_MS) % 2 === 0;
+  if (elapsed < AUTO_SWITCH_DELAY) return false;
+  return Math.floor((elapsed - AUTO_SWITCH_DELAY) / AUTO_SWITCH_MS) % 2 === 0;
 }
 
 function updateModalityControl(showingImc) {
@@ -145,38 +162,42 @@ function updateModalityControl(showingImc) {
 
 function positionCell(progress) {
   const mobile = window.innerWidth <= 900;
-  let x;
-  let y;
-  let scale;
-  let rotation;
+  const pullBack = smoothstep(0.055, 0.25, progress);
+  const enterVessel = smoothstep(0.39, 0.48, progress);
+  const vesselTravel = smoothstep(0.44, 0.67, progress);
+  const startX = mobile ? 50 : 68;
+  const startY = mobile ? 75 : 51;
+  const cellX = mobile ? 50 : 33;
+  const cellY = mobile ? 75 : 52;
+  const vesselX = mobile ? 54 : 56;
+  const endX = mobile ? 78 : 82;
+  const endY = mobile ? 75 : 52;
 
-  if (progress < 0.37) {
-    const emerge = smoothstep(0.11, 0.31, progress);
-    x = lerp(mobile ? 50 : 67, mobile ? 50 : 34, emerge);
-    y = lerp(mobile ? 75 : 50, mobile ? 75 : 53, emerge);
-    scale = lerp(0.2, mobile ? 0.7 : 0.82, emerge);
-    rotation = lerp(8, -2, emerge);
-  } else {
-    const travel = smoothstep(0.37, 0.67, progress);
-    x = lerp(mobile ? 50 : 38, mobile ? 78 : 88, travel);
-    y = (mobile ? 75 : 53) + Math.sin(travel * Math.PI * 2.2) * (mobile ? 2.2 : 4.2);
-    scale = lerp(mobile ? 0.34 : 0.42, 0.13, travel);
-    rotation = lerp(-4, 16, travel);
+  let x = lerp(startX, cellX, pullBack);
+  let y = lerp(startY, cellY, pullBack);
+  let scale = lerp(mobile ? 3.05 : 3.75, mobile ? 0.76 : 0.86, pullBack);
+  let rotation = lerp(2.5, -1.5, pullBack);
+
+  if (enterVessel > 0) {
+    x = lerp(cellX, lerp(vesselX, endX, vesselTravel), enterVessel);
+    y = lerp(cellY, endY + Math.sin(vesselTravel * Math.PI * 1.6) * (mobile ? 1.6 : 3), enterVessel);
+    scale = lerp(mobile ? 0.76 : 0.86, lerp(mobile ? 0.34 : 0.4, 0.18, vesselTravel), enterVessel);
+    rotation = lerp(-1.5, 10 + Math.sin(vesselTravel * Math.PI) * 5, enterVessel);
   }
 
   layers.cell.style.left = `${x.toFixed(2)}%`;
   layers.cell.style.top = `${y.toFixed(2)}%`;
+  layers.cell.style.filter = `brightness(${lerp(1, 1.14, enterVessel).toFixed(3)})`;
   setTransform(layers.cell, `translate(-50%, -50%) scale(${scale.toFixed(3)}) rotate(${rotation.toFixed(2)}deg)`);
 
-  const trailX = x - 53;
-  const trailY = y - 54;
-  setTransform(cellTrail, `translate(${trailX.toFixed(2)}vw, ${trailY.toFixed(2)}vh)`);
+  cellBloom.style.left = `${endX}%`;
+  cellBloom.style.top = `${endY}%`;
 }
 
 function renderFrame(time) {
   const frameDelta = Math.min(48, previousFrameTime ? time - previousFrameTime : 16.7);
   previousFrameTime = time;
-  const progressEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.0095);
+  const progressEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.0105);
   visualProgress += (targetProgress - visualProgress) * progressEase;
   if (Math.abs(targetProgress - visualProgress) < 0.0001) visualProgress = targetProgress;
 
@@ -185,42 +206,55 @@ function renderFrame(time) {
   railProgress.style.transform = `scaleY(${progress})`;
 
   const requestedImc = desiredImcState(time);
-  const blendEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.035);
+  const blendEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.04);
   imcBlend += ((requestedImc ? 1 : 0) - imcBlend) * blendEase;
   if (Math.abs(imcBlend - (requestedImc ? 1 : 0)) < 0.002) imcBlend = requestedImc ? 1 : 0;
   updateModalityControl(imcBlend >= 0.5);
 
-  const moleculeAlpha = 1 - smoothstep(0.2, 0.37, progress);
-  const cellAlpha = smoothstep(0.1, 0.19, progress) * (1 - smoothstep(0.65, 0.72, progress));
-  const bloodstreamAlpha = smoothstep(0.32, 0.4, progress) * (1 - smoothstep(0.63, 0.72, progress));
-  const tissueReveal = smoothstep(0.58, 0.69, progress);
-  const patientReveal = smoothstep(0.79, 0.89, progress);
-  const tissueLife = 1 - smoothstep(0.88, 0.95, progress);
+  const helixFold = smoothstep(0.075, 0.225, progress);
+  const molecularAlpha = 1 - smoothstep(0.18, 0.3, progress);
+  const cellAlpha = (1 - smoothstep(0.665, 0.705, progress)) * (1 - smoothstep(0, 0.035, progress) * 0.04);
+  const bloodstreamAlpha = smoothstep(0.39, 0.47, progress) * (1 - smoothstep(0.64, 0.71, progress));
+  const tissueReveal = smoothstep(0.65, 0.72, progress);
+  const patientReveal = smoothstep(0.83, 0.91, progress);
+  const tissueLife = 1 - smoothstep(0.89, 0.96, progress);
   const tissueAlpha = tissueReveal * tissueLife;
 
-  setOpacity(layers.molecules, moleculeAlpha);
+  setOpacity(layers.molecules, molecularAlpha);
   setOpacity(layers.bloodstream, bloodstreamAlpha);
   setOpacity(layers.cell, cellAlpha);
   setOpacity(layers['tissue-he'], tissueAlpha * (1 - imcBlend));
   setOpacity(layers['tissue-imc'], tissueAlpha * imcBlend);
   setOpacity(layers.patient, patientReveal);
 
-  setTransform(layers.molecules, `scale(${lerp(1, 1.16, smoothstep(0, 0.34, progress)).toFixed(3)})`);
-  setTransform(layers.bloodstream, `scale(${lerp(1.04, 1, smoothstep(0.34, 0.64, progress)).toFixed(3)}) translateX(${lerp(1.8, -1.8, smoothstep(0.34, 0.64, progress)).toFixed(2)}%)`);
   positionCell(progress);
-  setOpacity(cellTrail, smoothstep(0.37, 0.43, progress) * (1 - smoothstep(0.61, 0.68, progress)));
+  const helixScale = lerp(1, 0.2, helixFold);
+  setTransform(molecularHelix, `translate(-50%, -50%) rotate(${lerp(8, 38, helixFold).toFixed(2)}deg) scale(${helixScale.toFixed(3)})`);
+  setOpacity(molecularHelix, 1 - smoothstep(0.15, 0.23, progress));
+  setOpacity(molecularField, 1 - smoothstep(0.13, 0.25, progress));
+  setOpacity(molecularCaption, 1 - smoothstep(0.09, 0.17, progress));
 
-  const tissueX = window.innerWidth <= 900 ? 78 : 88;
-  const tissueY = window.innerWidth <= 900 ? 74 : 53;
-  const tissueRadius = lerp(0, 145, tissueReveal);
-  setClip(layers['tissue-he'], tissueRadius, tissueX, tissueY);
-  setClip(layers['tissue-imc'], tissueRadius, tissueX, tissueY);
-  const tissueScale = lerp(1, 0.16, patientReveal);
+  const vesselPan = smoothstep(0.43, 0.66, progress);
+  setTransform(layers.bloodstream, `scale(${lerp(1.04, 1, vesselPan).toFixed(3)}) translateX(${lerp(1.5, -1.5, vesselPan).toFixed(2)}%)`);
+
+  const bloomIn = smoothstep(0.635, 0.68, progress);
+  const bloomOut = 1 - smoothstep(0.69, 0.735, progress);
+  setOpacity(cellBloom, bloomIn * bloomOut);
+  setTransform(cellBloom, `translate(-50%, -50%) scale(${lerp(0.35, 2.6, tissueReveal).toFixed(3)})`);
+
+  const tissueX = window.innerWidth <= 900 ? 78 : 82;
+  const tissueY = window.innerWidth <= 900 ? 75 : 52;
+  setClip(layers['tissue-he'], lerp(0, 145, tissueReveal), tissueX, tissueY);
+  setClip(layers['tissue-imc'], lerp(0, 145, tissueReveal), tissueX, tissueY);
+
+  const tissueScale = lerp(1, 0.14, patientReveal);
   const tissueTransform = `scale(${tissueScale.toFixed(3)})`;
   layers['tissue-he'].style.transformOrigin = '31% 51%';
   layers['tissue-imc'].style.transformOrigin = '31% 51%';
   setTransform(layers['tissue-he'], tissueTransform);
   setTransform(layers['tissue-imc'], tissueTransform);
+  setOpacity(fusionModel, patientReveal);
+  setTransform(fusionModel, `translate(-50%, -50%) scale(${lerp(0.72, 1, patientReveal).toFixed(3)})`);
 
   requestAnimationFrame(renderFrame);
 }
@@ -232,7 +266,7 @@ modalityOptions.forEach((option) => {
   });
 });
 
-buildMolecules();
+buildMolecularField();
 window.addEventListener('scroll', measureProgress, { passive: true });
 window.addEventListener('resize', measureProgress);
 measureProgress();
