@@ -26,6 +26,7 @@ const molecularCaption = document.querySelector('.molecular-caption');
 const cellBloom = document.querySelector('#cell-bloom');
 const fusionModel = document.querySelector('#fusion-model');
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const AMBIENT_FRAME_MS = 1000 / 30;
 
 const states = [
   { modality: 'DNA · RNA ENCODERS', value: 'DNA + RNA', name: 'MOLECULAR SIGNAL', context: 'INPUT SPACE' },
@@ -62,11 +63,16 @@ let tissueEnteredAt = 0;
 let canvasWidth = 0;
 let canvasHeight = 0;
 let canvasDpr = 1;
+let lastShowingImc = null;
+let renderFrameId = 0;
+let ambientTimer = 0;
+let scrollPositionDirty = true;
 
 function resizeMolecularCanvas() {
   const nextWidth = Math.max(1, Math.round(stage.clientWidth));
   const nextHeight = Math.max(1, Math.round(stage.clientHeight));
-  const nextDpr = Math.min(2, window.devicePixelRatio || 1);
+  const dprLimit = window.innerWidth <= 900 ? 1.25 : 1.5;
+  const nextDpr = Math.min(dprLimit, window.devicePixelRatio || 1);
   if (nextWidth === canvasWidth && nextHeight === canvasHeight && nextDpr === canvasDpr) return;
 
   canvasWidth = nextWidth;
@@ -79,19 +85,19 @@ function resizeMolecularCanvas() {
 
 function drawNode(x, y, radius, color, alpha) {
   if (alpha <= 0.002) return;
-  molecularContext.save();
-  molecularContext.globalAlpha = alpha;
   molecularContext.fillStyle = color;
-  molecularContext.shadowColor = color;
-  molecularContext.shadowBlur = radius * 3.2;
+  molecularContext.globalAlpha = alpha * 0.16;
+  molecularContext.beginPath();
+  molecularContext.arc(x, y, radius * 2.45, 0, Math.PI * 2);
+  molecularContext.fill();
+  molecularContext.globalAlpha = alpha;
   molecularContext.beginPath();
   molecularContext.arc(x, y, radius, 0, Math.PI * 2);
   molecularContext.fill();
-  molecularContext.restore();
+  molecularContext.globalAlpha = 1;
 }
 
 function drawMolecularAssembly(progress, time) {
-  resizeMolecularCanvas();
   molecularContext.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
   molecularContext.clearRect(0, 0, canvasWidth, canvasHeight);
   if (progress > 0.315) return;
@@ -125,7 +131,7 @@ function drawMolecularAssembly(progress, time) {
   molecularContext.globalCompositeOperation = 'lighter';
   const dnaA = [];
   const dnaB = [];
-  const rungCount = 20;
+  const rungCount = mobile ? 16 : 20;
   for (let index = 0; index < rungCount; index += 1) {
     const amount = index / (rungCount - 1);
     const y = centerY - helixHeight / 2 + amount * helixHeight;
@@ -165,7 +171,7 @@ function drawMolecularAssembly(progress, time) {
   });
 
   const rnaPoints = [];
-  const rnaCount = 17;
+  const rnaCount = mobile ? 14 : 17;
   for (let index = 0; index < rnaCount; index += 1) {
     const amount = index / (rnaCount - 1);
     const startX = rnaCenterX + Math.sin(amount * Math.PI * 4.2 + motionTime * 0.55) * (mobile ? 18 : 27);
@@ -192,7 +198,7 @@ function drawMolecularAssembly(progress, time) {
     molecularContext.rotate(motionTime * 0.055);
     molecularContext.strokeStyle = `rgba(142, 181, 255, ${0.56 * assembly * scaffoldAlpha})`;
     molecularContext.shadowColor = '#2f7cff';
-    molecularContext.shadowBlur = 18;
+    molecularContext.shadowBlur = 10;
     molecularContext.lineWidth = 1.25;
     molecularContext.setLineDash([3, 7]);
     molecularContext.beginPath();
@@ -208,11 +214,12 @@ function drawMolecularAssembly(progress, time) {
     molecularContext.rotate(-motionTime * 0.025);
     molecularContext.strokeStyle = `rgba(47, 124, 255, ${0.62 * membrane * scaffoldAlpha})`;
     molecularContext.shadowColor = '#2f7cff';
-    molecularContext.shadowBlur = 22;
+    molecularContext.shadowBlur = 12;
     molecularContext.lineWidth = 1.8;
     molecularContext.beginPath();
-    for (let index = 0; index <= 72; index += 1) {
-      const angle = index / 72 * Math.PI * 2;
+    const membranePoints = mobile ? 52 : 72;
+    for (let index = 0; index <= membranePoints; index += 1) {
+      const angle = index / membranePoints * Math.PI * 2;
       const variance = 1 + Math.sin(angle * 7 + 0.4) * 0.035 + Math.cos(angle * 11) * 0.018;
       const x = Math.cos(angle) * ringRadius * variance;
       const y = Math.sin(angle) * ringRadius * 0.94 * variance;
@@ -256,20 +263,46 @@ function mapScrollProgress(progress) {
   return STORY_TIMELINE[STORY_TIMELINE.length - 1][1];
 }
 
+function requestRender() {
+  if (document.hidden) return;
+  if (ambientTimer) {
+    window.clearTimeout(ambientTimer);
+    ambientTimer = 0;
+  }
+  if (!renderFrameId) renderFrameId = requestAnimationFrame(renderFrame);
+}
+
+function scheduleAmbientRender() {
+  if (document.hidden || ambientTimer || renderFrameId) return;
+  ambientTimer = window.setTimeout(() => {
+    ambientTimer = 0;
+    requestRender();
+  }, AMBIENT_FRAME_MS);
+}
+
+function stopRendering() {
+  if (renderFrameId) cancelAnimationFrame(renderFrameId);
+  if (ambientTimer) window.clearTimeout(ambientTimer);
+  renderFrameId = 0;
+  ambientTimer = 0;
+}
+
 function measureProgress() {
   const rect = story.getBoundingClientRect();
   const distance = Math.max(1, rect.height - window.innerHeight);
   targetProgress = mapScrollProgress(clamp(-rect.top / distance));
   storyVisible = rect.bottom > 0 && rect.top < window.innerHeight;
+  stage.classList.toggle('story-visible', storyVisible);
 
   const pageMax = document.documentElement.scrollHeight - window.innerHeight;
-  pageProgress.style.transform = `scaleX(${pageMax > 0 ? window.scrollY / pageMax : 0})`;
+  setTransform(pageProgress, `scaleX(${pageMax > 0 ? window.scrollY / pageMax : 0})`);
   const stageRect = stage.getBoundingClientRect();
   header.classList.toggle('on-dark', stageRect.top <= 76 && stageRect.bottom >= 76);
 }
 
 function handleScroll() {
-  measureProgress();
+  scrollPositionDirty = true;
+  requestRender();
 }
 
 function applyStep(step, time) {
@@ -297,12 +330,19 @@ function setOpacity(element, value) {
   if (element.style.opacity !== next) element.style.opacity = next;
 }
 
+function setLayerOpacity(element, value) {
+  const nextValue = clamp(value);
+  setOpacity(element, nextValue);
+  const nextVisibility = nextValue <= 0.001 ? 'hidden' : 'visible';
+  if (element.style.visibility !== nextVisibility) element.style.visibility = nextVisibility;
+}
+
 function setTransform(element, value) {
   if (element.style.transform !== value) element.style.transform = value;
 }
 
 function setClip(element, radius, x, y) {
-  const next = `circle(${Math.max(0, radius).toFixed(2)}% at ${x.toFixed(2)}% ${y.toFixed(2)}%)`;
+  const next = `circle(${Math.max(0, radius).toFixed(1)}% at ${x.toFixed(1)}% ${y.toFixed(1)}%)`;
   if (element.style.clipPath !== next) element.style.clipPath = next;
 }
 
@@ -315,6 +355,8 @@ function desiredImcState(time) {
 }
 
 function updateModalityControl(showingImc) {
+  if (showingImc === lastShowingImc) return;
+  lastShowingImc = showingImc;
   if (activeStep === 3) modalityLabel.textContent = showingImc ? 'IMAGING MASS CYTOMETRY' : 'H&E · WHOLE TISSUE';
   modalityOptions.forEach((option) => {
     const active = option.dataset.mode === (showingImc ? 'imc' : 'he');
@@ -348,16 +390,18 @@ function positionCell(progress) {
     rotation = lerp(-1.5, 10 + Math.sin(vesselTravel * Math.PI) * 5, enterVessel);
   }
 
-  layers.cell.style.left = `${x.toFixed(2)}%`;
-  layers.cell.style.top = `${y.toFixed(2)}%`;
-  layers.cell.style.filter = `brightness(${lerp(1, 1.14, enterVessel).toFixed(3)})`;
-  setTransform(layers.cell, `translate(-50%, -50%) scale(${scale.toFixed(3)}) rotate(${rotation.toFixed(2)}deg)`);
-
-  cellBloom.style.left = `${endX}%`;
-  cellBloom.style.top = `${endY}%`;
+  const translateX = canvasWidth * x / 100;
+  const translateY = canvasHeight * y / 100;
+  setTransform(layers.cell, `translate3d(${translateX.toFixed(1)}px, ${translateY.toFixed(1)}px, 0) translate(-50%, -50%) scale(${scale.toFixed(3)}) rotate(${rotation.toFixed(2)}deg)`);
 }
 
 function renderFrame(time) {
+  renderFrameId = 0;
+  if (scrollPositionDirty) {
+    measureProgress();
+    scrollPositionDirty = false;
+  }
+
   const frameDelta = Math.min(48, previousFrameTime ? time - previousFrameTime : 16.7);
   previousFrameTime = time;
   const progressEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.0105);
@@ -366,7 +410,7 @@ function renderFrame(time) {
 
   const progress = visualProgress;
   applyStep(stepFromProgress(progress), time);
-  railProgress.style.transform = `scaleY(${progress})`;
+  setTransform(railProgress, `scaleY(${progress.toFixed(4)})`);
 
   const requestedImc = desiredImcState(time);
   const blendEase = reduceMotion ? 1 : 1 - Math.exp(-frameDelta * 0.04);
@@ -383,16 +427,17 @@ function renderFrame(time) {
   const tissueLife = 1 - smoothstep(0.89, 0.96, progress);
   const tissueAlpha = tissueReveal * tissueLife;
 
-  setOpacity(layers.molecules, molecularAlpha);
-  setOpacity(layers.bloodstream, bloodstreamAlpha);
-  setOpacity(layers.cell, cellAlpha);
-  setOpacity(layers['tissue-he'], tissueAlpha * (1 - imcBlend));
-  setOpacity(layers['tissue-imc'], tissueAlpha * imcBlend);
-  setOpacity(layers.patient, patientReveal);
+  setLayerOpacity(layers.molecules, molecularAlpha);
+  setLayerOpacity(layers.bloodstream, bloodstreamAlpha);
+  setLayerOpacity(layers.cell, cellAlpha);
+  setLayerOpacity(layers.tissue, tissueAlpha);
+  setLayerOpacity(layers['tissue-he'], tissueAlpha > 0.001 ? 1 - imcBlend : 0);
+  setLayerOpacity(layers['tissue-imc'], tissueAlpha > 0.001 ? imcBlend : 0);
+  setLayerOpacity(layers.patient, patientReveal);
 
   positionCell(progress);
   setClip(layers.cell, lerp(2, 76, cellResolve), 50, 50);
-  drawMolecularAssembly(progress, time);
+  if (storyVisible && progress <= 0.315) drawMolecularAssembly(progress, time);
   setOpacity(molecularCaption, 1 - smoothstep(0.075, 0.16, progress));
 
   const vesselPan = smoothstep(0.43, 0.66, progress);
@@ -400,30 +445,35 @@ function renderFrame(time) {
 
   const bloomIn = smoothstep(0.635, 0.68, progress);
   const bloomOut = 1 - smoothstep(0.69, 0.735, progress);
-  setOpacity(cellBloom, bloomIn * bloomOut);
+  setLayerOpacity(cellBloom, bloomIn * bloomOut);
   setTransform(cellBloom, `translate(-50%, -50%) scale(${lerp(0.35, 2.6, tissueReveal).toFixed(3)})`);
 
   const tissueX = window.innerWidth <= 900 ? 78 : 82;
   const tissueY = window.innerWidth <= 900 ? 75 : 52;
-  setClip(layers['tissue-he'], lerp(0, 145, tissueReveal), tissueX, tissueY);
-  setClip(layers['tissue-imc'], lerp(0, 145, tissueReveal), tissueX, tissueY);
+  setClip(layers.tissue, lerp(0, 145, tissueReveal), tissueX, tissueY);
 
   const tissueScale = lerp(1, 0.14, patientReveal);
   const tissueTransform = `scale(${tissueScale.toFixed(3)})`;
-  layers['tissue-he'].style.transformOrigin = '31% 51%';
-  layers['tissue-imc'].style.transformOrigin = '31% 51%';
-  setTransform(layers['tissue-he'], tissueTransform);
-  setTransform(layers['tissue-imc'], tissueTransform);
-  setOpacity(fusionModel, patientReveal);
+  setTransform(layers.tissue, tissueTransform);
+  setLayerOpacity(fusionModel, patientReveal);
   setTransform(fusionModel, `translate(-50%, -50%) scale(${lerp(0.72, 1, patientReveal).toFixed(3)})`);
 
-  requestAnimationFrame(renderFrame);
+  const progressMoving = Math.abs(targetProgress - visualProgress) >= 0.0001;
+  const blendMoving = Math.abs((requestedImc ? 1 : 0) - imcBlend) >= 0.002;
+  const needsAmbientMotion = storyVisible && !reduceMotion && (
+    (activeStep === 0 && progress <= 0.315) ||
+    (activeStep === 3 && !manualMode)
+  );
+
+  if (progressMoving || blendMoving) requestRender();
+  else if (needsAmbientMotion) scheduleAmbientRender();
 }
 
 modalityOptions.forEach((option) => {
   option.addEventListener('click', () => {
     manualMode = option.dataset.mode;
     updateModalityControl(manualMode === 'imc');
+    requestRender();
   });
 });
 
@@ -431,9 +481,28 @@ resizeMolecularCanvas();
 window.addEventListener('scroll', handleScroll, { passive: true });
 window.addEventListener('resize', () => {
   resizeMolecularCanvas();
-  measureProgress();
+  scrollPositionDirty = true;
+  requestRender();
+});
+if ('ResizeObserver' in window) {
+  const stageResizeObserver = new ResizeObserver(() => {
+    resizeMolecularCanvas();
+    scrollPositionDirty = true;
+    requestRender();
+  });
+  stageResizeObserver.observe(stage);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopRendering();
+    return;
+  }
+  previousFrameTime = 0;
+  scrollPositionDirty = true;
+  requestRender();
 });
 measureProgress();
+scrollPositionDirty = false;
 applyStep(0, performance.now());
-requestAnimationFrame(renderFrame);
+requestRender();
 document.querySelector('#year').textContent = new Date().getFullYear();

@@ -88,13 +88,19 @@ h1 em, h2 em, blockquote em { font-family: var(--serif); font-weight: 400; }
 
 .scale-story { position: relative; height: 1050vh; background: var(--night); }
 .microscope-stage { position: sticky; top: 0; height: 100svh; overflow: hidden; color: #f5f8ff; background: var(--night); isolation: isolate; }
-.stage-media, .molecular-scene, .bloodstream-layer, .tissue-layer, .patient-scene { position: absolute; inset: 0; }
-.molecular-scene, .bloodstream-layer, .cell-cinema, .tissue-layer, .patient-scene { will-change: opacity, transform; backface-visibility: hidden; }
-.bloodstream-layer, .tissue-layer, .patient-scene { opacity: 0; }
+.stage-media, .molecular-scene, .bloodstream-layer, .tissue-clip, .tissue-layer, .patient-scene { position: absolute; inset: 0; }
+.molecular-scene, .bloodstream-layer, .cell-cinema, .tissue-clip, .tissue-layer, .patient-scene { backface-visibility: hidden; }
+.bloodstream-layer, .tissue-clip, .patient-scene { opacity: 0; }
+.story-visible.step-0 .molecular-scene, .story-visible.step-0 .cell-cinema,
+.story-visible.step-1 .molecular-scene, .story-visible.step-1 .cell-cinema, .story-visible.step-1 .bloodstream-layer,
+.story-visible.step-2 .cell-cinema, .story-visible.step-2 .bloodstream-layer, .story-visible.step-2 .tissue-clip,
+.story-visible.step-3 .cell-cinema, .story-visible.step-3 .bloodstream-layer, .story-visible.step-3 .tissue-clip, .story-visible.step-3 .tissue-layer, .story-visible.step-3 .patient-scene,
+.story-visible.step-4 .tissue-clip, .story-visible.step-4 .tissue-layer, .story-visible.step-4 .patient-scene { will-change: opacity, transform, clip-path; }
 .bloodstream-layer { z-index: 2; overflow: hidden; background: #030712; }
 .bloodstream-layer img, .tissue-layer img { width: 100%; height: 100%; object-fit: cover; }
 .bloodstream-layer img { filter: saturate(0.9) contrast(1.08) brightness(0.78); transform: scale(1.04); }
-.blood-flow { position: absolute; inset: -18%; opacity: 0.26; background: repeating-linear-gradient(101deg, transparent 0 90px, rgba(105, 199, 255, 0.1) 92px, transparent 94px 168px); transform: translateX(-12%); animation: blood-flow 7s linear infinite; mix-blend-mode: screen; }
+.blood-flow { position: absolute; inset: -18%; opacity: 0.26; background: repeating-linear-gradient(101deg, transparent 0 90px, rgba(105, 199, 255, 0.1) 92px, transparent 94px 168px); transform: translateX(-12%); animation: blood-flow 7s linear infinite; animation-play-state: paused; mix-blend-mode: screen; }
+.story-visible.step-1 .blood-flow, .story-visible.step-2 .blood-flow, .story-visible.step-3 .blood-flow { animation-play-state: running; }
 @keyframes blood-flow { to { transform: translateX(12%); } }
 
 .molecular-scene { z-index: 6; overflow: hidden; background: radial-gradient(circle at 68% 51%, rgba(47, 124, 255, 0.17), transparent 22%), radial-gradient(circle at 69% 51%, rgba(105, 199, 255, 0.07), transparent 41%); pointer-events: none; }
@@ -102,19 +108,23 @@ h1 em, h2 em, blockquote em { font-family: var(--serif); font-weight: 400; }
 .molecular-caption { position: absolute; z-index: 4; left: 68%; bottom: 9%; display: flex; align-items: center; gap: 11px; color: rgba(226, 237, 255, 0.68); font: 500 8px/1 var(--mono); letter-spacing: 0.14em; transform: translateX(-50%); }
 .molecular-caption i { display: block; width: 32px; height: 1px; background: linear-gradient(90deg, #69c7ff, #2f7cff); }
 
-.cell-cinema { position: absolute; z-index: 5; left: 68%; top: 51%; width: min(56vw, 760px); opacity: 1; pointer-events: none; transform-origin: center; }
+.cell-cinema { position: absolute; z-index: 5; left: 0; top: 0; width: min(56vw, 760px); opacity: 1; pointer-events: none; transform: translate3d(68vw, 51svh, 0) translate(-50%, -50%) scale(0.62); transform-origin: center; }
 .cell-cinema img { width: 100%; height: auto; object-fit: contain; -webkit-mask-image: radial-gradient(ellipse 55% 49% at 50% 49%, black 0%, black 66%, rgba(0, 0, 0, 0.88) 76%, transparent 98%); mask-image: radial-gradient(ellipse 55% 49% at 50% 49%, black 0%, black 66%, rgba(0, 0, 0, 0.88) 76%, transparent 98%); filter: saturate(1.05) contrast(1.03) drop-shadow(0 0 34px rgba(47, 124, 255, 0.18)); }
-.cell-bloom { position: absolute; z-index: 5; left: 78%; top: 52%; width: 24vmin; aspect-ratio: 1; border-radius: 50%; opacity: 0; pointer-events: none; background: radial-gradient(circle, rgba(241, 247, 255, 0.88), rgba(47, 124, 255, 0.34) 28%, rgba(105, 199, 255, 0.14) 49%, transparent 72%); transform: translate(-50%, -50%) scale(0.4); filter: blur(7px); will-change: opacity, transform; }
+.cell-bloom { position: absolute; z-index: 5; left: 78%; top: 52%; width: 24vmin; aspect-ratio: 1; border-radius: 50%; opacity: 0; pointer-events: none; background: radial-gradient(circle, rgba(241, 247, 255, 0.88), rgba(47, 124, 255, 0.34) 28%, rgba(105, 199, 255, 0.14) 49%, transparent 72%); transform: translate(-50%, -50%) scale(0.4); filter: blur(7px); }
+.story-visible.step-2 .cell-bloom, .story-visible.step-3 .cell-bloom { will-change: opacity, transform; }
 
-.tissue-layer { z-index: 4; overflow: hidden; background: #eef1f6; clip-path: circle(0% at 88% 53%); }
-.tissue-layer img { object-fit: contain; }
-.tissue-imc { background: #01050d; }
+.tissue-clip { z-index: 4; overflow: hidden; background: #eef1f6; clip-path: circle(0% at 88% 53%); transform-origin: 31% 51%; }
+.tissue-layer { overflow: hidden; }
+.tissue-layer img { width: 100%; height: 100%; object-fit: contain; }
+.tissue-he { opacity: 1; }
+.tissue-imc { opacity: 0; background: #01050d; }
 .patient-scene { z-index: 6; overflow: hidden; background: radial-gradient(circle at 31% 51%, rgba(47, 124, 255, 0.2), transparent 27%), radial-gradient(circle at 28% 58%, rgba(105, 199, 255, 0.08), transparent 39%), var(--night); }
 .patient-grid { position: absolute; inset: 0; opacity: 0.24; background-image: linear-gradient(rgba(105, 199, 255, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(105, 199, 255, 0.08) 1px, transparent 1px); background-size: 46px 46px; -webkit-mask-image: radial-gradient(circle at 31% 52%, black, transparent 41%); mask-image: radial-gradient(circle at 31% 52%, black, transparent 41%); }
 .patient-map { position: absolute; left: 31%; top: 53%; width: min(24vw, 270px); height: min(70vh, 620px); overflow: visible; opacity: 0.55; transform: translate(-50%, -50%); filter: drop-shadow(0 0 24px rgba(105, 199, 255, 0.2)); }
 .patient-outline { fill: rgba(8, 30, 66, 0.3); stroke: rgba(160, 204, 255, 0.68); stroke-width: 2; vector-effect: non-scaling-stroke; }
-.patient-signal { fill: none; stroke: rgba(105, 199, 255, 0.78); stroke-width: 2; stroke-dasharray: 4 9; vector-effect: non-scaling-stroke; animation: patient-signal 5s linear infinite; }
-.patient-focus { fill: rgba(47, 124, 255, 0.17); stroke: var(--signal); stroke-width: 2; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 11px var(--signal)); animation: patient-focus 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.patient-signal { fill: none; stroke: rgba(105, 199, 255, 0.78); stroke-width: 2; stroke-dasharray: 4 9; vector-effect: non-scaling-stroke; animation: patient-signal 5s linear infinite; animation-play-state: paused; }
+.patient-focus { fill: rgba(47, 124, 255, 0.17); stroke: var(--signal); stroke-width: 2; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 11px var(--signal)); animation: patient-focus 2.2s ease-in-out infinite; animation-play-state: paused; transform-box: fill-box; transform-origin: center; }
+.story-visible.step-4 .patient-signal, .story-visible.step-4 .patient-focus { animation-play-state: running; }
 @keyframes patient-signal { to { stroke-dashoffset: -52; } }
 @keyframes patient-focus { 50% { transform: scale(1.25); opacity: 0.62; } }
 
@@ -144,7 +154,8 @@ h1 em, h2 em, blockquote em { font-family: var(--serif); font-weight: 400; }
 
 .fusion-model { position: absolute; z-index: 16; left: 31%; top: 52%; width: 420px; height: 420px; opacity: 0; pointer-events: none; transform: translate(-50%, -50%) scale(0.72); transition: opacity 0.6s ease, transform 0.9s cubic-bezier(.2,.8,.2,1); }
 .step-4 .fusion-model { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-.fusion-ring { position: absolute; inset: 32px; border: 1px solid rgba(47, 124, 255, 0.42); border-radius: 50%; animation: orbit-centered 18s linear infinite; }
+.fusion-ring { position: absolute; inset: 32px; border: 1px solid rgba(47, 124, 255, 0.42); border-radius: 50%; animation: orbit-centered 18s linear infinite; animation-play-state: paused; }
+.story-visible.step-4 .fusion-ring { animation-play-state: running; }
 .fusion-ring::before, .fusion-ring::after { content: ""; position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 12px var(--signal); }
 .fusion-ring::before { top: -3px; left: 50%; }
 .fusion-ring::after { right: 12%; bottom: 9%; }
@@ -248,6 +259,7 @@ footer p { justify-self: end; margin: 0; font: 9px/1 var(--mono); }
   .molecular-scene { background: radial-gradient(circle at 50% 75%, rgba(47, 124, 255, 0.25), transparent 24%), radial-gradient(circle at 50% 75%, rgba(105, 199, 255, 0.09), transparent 42%); }
   .molecular-caption { left: 50%; bottom: 5.5%; }
   .cell-cinema { width: min(92vw, 560px); }
+  .cell-bloom { top: 75%; }
   .patient-map { left: 50%; top: 74%; width: 132px; height: 300px; }
   .depth-rail { display: none; }
   .scale-readout { right: 18px; bottom: 17px; }

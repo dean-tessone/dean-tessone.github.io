@@ -11,7 +11,7 @@
     <link rel="preload" as="image" href="assets/cancer-cell-cinematic-v1.jpg" fetchpriority="high" />
     <link rel="preload" as="image" href="assets/bloodstream-v1.jpg" />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Instrument+Serif:ital@0;1&amp;family=Space+Grotesk:wght@400;500;600&amp;display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260715-rest-zones" />
+    <link rel="stylesheet" href="styles.css?v=20260716-performance" />
   </head>
   <body>
     <div class="noise" aria-hidden="true"></div>
@@ -55,13 +55,15 @@
               <div class="molecular-caption"><span>DNA</span><i></i><span>RNA</span></div>
             </div>
             <div class="bloodstream-layer" data-layer="bloodstream">
-              <img src="assets/bloodstream-v1.jpg" alt="" />
+              <img src="assets/bloodstream-v1.jpg" alt="" decoding="async" />
               <div class="blood-flow" aria-hidden="true"></div>
             </div>
-            <div class="cell-cinema" data-layer="cell"><img src="assets/cancer-cell-cinematic-v1.jpg" alt="" /></div>
+            <div class="cell-cinema" data-layer="cell"><img src="assets/cancer-cell-cinematic-v1.jpg" alt="" decoding="async" /></div>
             <div class="cell-bloom" id="cell-bloom" aria-hidden="true"></div>
-            <div class="tissue-layer tissue-he" data-layer="tissue-he"><img src="assets/pathology-zoom-v1.jpg" alt="" /></div>
-            <div class="tissue-layer tissue-imc" data-layer="tissue-imc"><img src="assets/tissue-imc-v2.jpg" alt="" /></div>
+            <div class="tissue-clip" data-layer="tissue">
+              <div class="tissue-layer tissue-he" data-layer="tissue-he"><img src="assets/pathology-zoom-v1.jpg" alt="" decoding="async" /></div>
+              <div class="tissue-layer tissue-imc" data-layer="tissue-imc"><img src="assets/tissue-imc-v2.jpg" alt="" decoding="async" /></div>
+            </div>
             <div class="patient-scene" data-layer="patient" aria-hidden="true">
               <div class="patient-grid"></div>
               <svg class="patient-map" viewBox="0 0 360 700" aria-hidden="true">
@@ -237,6 +239,6 @@
       <div class="footer-links"><a href="https://www.linkedin.com/in/deantessone/" target="_blank" rel="noreferrer">LinkedIn</a><a href="https://github.com/dean-tessone" target="_blank" rel="noreferrer">GitHub</a><a href="https://scholar.google.com/citations?user=ld6GwJsAAAAJ&amp;hl=en&amp;authuser=1" target="_blank" rel="noreferrer">Scholar</a></div>
       <p>© <span id="year"></span> Dean Tessone</p>
     </footer>
-    <script src="script.js?v=20260715-balanced-scroll"></script>
+    <script src="script.js?v=20260716-performance"></script>
   </body>
 </html>
